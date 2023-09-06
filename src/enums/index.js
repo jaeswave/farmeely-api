@@ -1,0 +1,85 @@
+
+const GENDER =  {
+    MALE : 1,
+    FEMALE : 2,
+    OTHERS : 3 
+}
+
+const RELIGION =  {
+    ISLAM :  1,
+    CHRISTIANITY : 2,
+    OTHERS : 3
+}
+
+const MARITAL_STATUS =   {
+    MARRIED :  1,
+    SINGLE : 2,
+    DIVORCE : 3,
+    UNKNOWN : 4
+}
+
+const MEANS_OF_IDENTIFICATION = {
+
+    DRIVER_LICENSE :  1,
+    NATIONAL_IDENTITY_CARD : 2,
+    INTERNATIONAL_PASSPORT : 3,
+    VOTERS_REGISTRATION_CARD : 4,
+    OTHERS : 5
+}
+
+const MEANS_OF_IDENTIFICATION_APPROVAL_STATUS = {
+       
+    DEFAULT : 1,
+    APPROVED : 2,
+    DENIED : 3,
+    REJECT_SELFIE : 4,
+    NOTUPLOADED :  5
+}
+
+const OTP_TYPE = {
+
+    CREATE_ACCOUNT: 1,
+    FORGET_PASSWORD: 2
+}
+
+const USER_STATUS = {
+        ACTIVE: 1,
+        SUSPENDED: 2,
+        DELETED: 3
+}
+
+const TRANSACTION_TYPE = {
+    CREDIT: 1,
+    DEBIT: 2
+}
+
+const TRANSACTION_STATUS = {
+    INITIALIZED: 1,
+    SUCCESSFUL: 2,
+    FAILED: 3,
+    UNKNOWN: 4,
+    POSTED: 5,
+    COMPLETED: 6,
+    ROLLBACK_INITIATED: 7,
+    ROLLBACK_FAILED: 8,
+    ROLLBACK_COMPLETED: 9
+}
+
+const TRANSACTION_CHANNEL = {
+    WEB: 1,
+    MOBILE: 2
+}
+
+
+module.exports = {
+    USER_STATUS,
+    GENDER,
+    RELIGION,
+    MARITAL_STATUS,
+    MEANS_OF_IDENTIFICATION,
+    MEANS_OF_IDENTIFICATION_APPROVAL_STATUS,
+    OTP_TYPE,
+    TRANSACTION_CHANNEL,
+    TRANSACTION_TYPE,
+    TRANSACTION_STATUS,
+}
