@@ -1,6 +1,6 @@
 require("dotenv").config();
 const {MongoClient} = require('mongodb');
-const dbname = process.env.DB_NAME || 'xwapit';
+const dbname = process.env.DB_NAME || 'farmeelyDB';
 const url = process.env.DB_URI || 'mongodb://127.0.0.1:27017';
 const cluster = process.env.DB_CLUSTER || 'cluster0.0jx8t';
 const client = new MongoClient(url);
