@@ -1,6 +1,6 @@
 const Joi = require('joi')
 
-const create = Joi.object({
+const register = Joi.object({
     lastname: Joi.string().required(),
     othernames: Joi.string().required(),
     email: Joi.string().email({ minDomainSegments: 2 }),
@@ -26,6 +26,19 @@ const create = Joi.object({
 
 })
 
+const login = Joi.object({
+    email: Joi.string().email({ minDomainSegments: 2 }),
+    password:  Joi.string().min(8).regex(/^(?=\S*[a-z])(?=\S*[A-Z])(?=\S*\d)(?=\S*[^\w\s])\S{8,30}$/).required()
+    .label('Password')
+    .messages({
+    'string.empty': `"Password" cannot be an empty`,
+    'string.min': `"Password" should have a minimum length of {#limit}`,
+    'any.required': `"Password" is a required field`,
+    'object.regex' : `Must have at least 8 characters`,
+    'string.pattern.base': `Password must contain at least a number, letter and special characters`
+    }),
+})
+
 const completeForgotPassword = Joi.object({
     email: Joi.string().email({ minDomainSegments: 2 }),
     newPassword: Joi.string().min(8).regex(/^(?=\S*[a-z])(?=\S*[A-Z])(?=\S*\d)(?=\S*[^\w\s])\S{8,30}$/).required()
@@ -43,11 +56,6 @@ const completeForgotPassword = Joi.object({
     
 })
 
-const changePassword = Joi.object({
-    newPassword: Joi.string().required(),
-    confirmNewPassword: Joi.string().required()
-})
-
 const updateUserInfo = Joi.object({
     bankCode: Joi.string().required(),
     accountNumber: Joi.string().required(),
@@ -57,8 +65,36 @@ const updateUserInfo = Joi.object({
 
 
 
+
+
+
+
+
+
+
+
+
+// const validateBank = (bankData) => {
+//     const bankSchema = Joi.object({
+//         account_number: Joi.number().required(),
+//         bank_code: Joi.number().required()
+        
+//     })
+//     return bankSchema.validate(bankData)
+// }
+
+// const changePassword = Joi.object({
+//     newPassword: Joi.string().required(),
+//     confirmNewPassword: Joi.string().required()
+// })
+
+
+
+
+
 module.exports = {
-    create, completeForgotPassword,
-    changePassword, updateUserInfo,
+    register,login,completeForgotPassword,
+    // changePassword,
+     updateUserInfo,
     
 }
