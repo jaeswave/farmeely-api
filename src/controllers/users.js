@@ -212,8 +212,6 @@ const completeForgetPassword = async (req, res, next) => {
 
     const checkOtpFromRedis = await redisClient.get(`otp_${email}`)
 
-    console.log("checkOtpFromRedis", checkOtpFromRedis)
-
     if (isEmpty(checkOtpFromRedis)) {
       const err = new Error("Invalid otp")
       err.status = 400
@@ -227,17 +225,10 @@ const completeForgetPassword = async (req, res, next) => {
     }
 
     const newPasswordHashAndSalt = await hashMyPassword(new_password)
+    
+    console.log("newPasswordHashAndSalt:",newPasswordHashAndSalt)
 
-    await updateMany(
-      "Users",
-      { email: email },
-      {
-        $and: [
-          { password_salt: newPasswordHashAndSalt[0] },
-          { password_hash: newPasswordHashAndSalt[1] },
-        ],
-      }
-    ) //update the password salt and has on database
+    await updateMany( "Users", { email: email }, { password_salt: newPasswordHashAndSalt[0] , password_hash: newPasswordHashAndSalt[1] }) //update the password salt and has on database
 
     redisClient.del(`otp_${email}`)
 
