@@ -3,7 +3,7 @@ const Joi = require('joi')
 const register = Joi.object({
     lastname: Joi.string().required(),
     othernames: Joi.string().required(),
-    email: Joi.string().email({ minDomainSegments: 2 }),
+    email: Joi.string().email({ minDomainSegments: 2 }).required(),
     phone_number: Joi.string().min(11).required()
     .label('Phone number')
     .messages({

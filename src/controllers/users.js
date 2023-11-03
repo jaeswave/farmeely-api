@@ -10,7 +10,15 @@ const { redisClient } = require("../config/redis");
 const { readFileAndSendEmail } = require("../services/email");
 
 const register = async (req, res, next) => {
-  const { lastName, otherName, email, phone_number,password } = req.body;
+  const {
+    lastname,
+    othernames,
+    email,
+    phone_number,
+    password,
+    who_referred_customer,
+    signup_channel,
+  } = req.body;
 
   try {
     const checkIfUserExist = await findQuery("Users", {
@@ -28,8 +36,8 @@ const register = async (req, res, next) => {
 
     const createCustomer = await insertOne("Users", {
       customer_id: customer_id,
-      lastName: lastName,
-      otherName: otherName,
+      lastname: lastname,
+      othernames: othernames,
       email: email,
       phone_number: phone_number,
       password_salt: HashedPasswordAndSalt[0],
@@ -54,7 +62,7 @@ const register = async (req, res, next) => {
     });
 
     let dataReplacementForOtpVerification = {
-      fullname: ` ${lastName}, ${otherNames}`,
+      fullname: ` ${lastname}, ${othernames}`,
       otp: `${otpValue}`,
     };
 
@@ -75,7 +83,7 @@ const register = async (req, res, next) => {
   }
 };
 
-const resendOTP = async (req, res) => {
+const resendOTP = async (req, res, next) => {
   const { email } = req.params;
 
   try {
@@ -91,21 +99,20 @@ const resendOTP = async (req, res) => {
         },
         "otp"
       );
-    }else{
+    } else {
+      const newOtp = generateOTP();
+      redisClient.set(`otp_${email}`, newOtp, {
+        EX: 60 * 5,
+      });
 
-    const newOtp = generateOTP();
-    redisClient.set(`otp_${email}`, newOtp, {
-      EX: 60 * 5,
-    });
-
-    readFileAndSendEmail(
-      email,
-      "RESEND OTP",
-      { fullname: `Buddy`, otp: `${newOtp}` },
-      "otp"
-    );
+      readFileAndSendEmail(
+        email,
+        "RESEND OTP",
+        { fullname: `Buddy`, otp: `${newOtp}` },
+        "otp"
+      );
     }
-   
+
     res.status(200).send({
       status: "success",
       message: "Otp Sent Successfully",
@@ -115,73 +122,79 @@ const resendOTP = async (req, res) => {
   }
 };
 
-const verifyOtp = async (req, res) => {
+const verifyOtp = async (req, res, next) => {
   const { otp, email } = req.params;
 
-  
   try {
-    if (!otp || !email ) {
+    if (!otp || !email) {
       const err = new Error("Invalid Otp");
       err.status = 400;
       return next(err);
     }
-    const verifyOtpFromRedis = await redisClient.get(`otp_${email}`)
+    const verifyOtpFromRedis = await redisClient.get(`otp_${email}`);
 
     if (isEmpty(verifyOtpFromRedis)) {
       const err = new Error("Invalid Otp and/or expired otp");
       err.status = 400;
       return next(err);
     }
-    
-    if (otp != verifyOtpFromRedis ) {
+
+    if (otp != verifyOtpFromRedis) {
       const err = new Error("Invalid Otp and/or expired otp");
       err.status = 400;
       return next(err);
     }
-    await updateOne("Users", {isOtpVerified: true}, {email: email}) //update the otp on redis 
+    await updateOne("Users", { isOtpVerified: true }, { email: email }); //update the otp on redis
 
-    redisClient.del(`otp_${email}`); //Delete the otp on redis 
+    redisClient.del(`otp_${email}`); //Delete the otp on redis
 
     res.status(200).json({
       status: true,
       message: "Otp verified successfully",
     });
-    
   } catch (error) {
     next(error);
   }
 };
 
-const startForgetPassword = async (req, res) => {
+const startForgetPassword = async (req, res, next) => {
   const { email } = req.params;
+
   try {
-    const hashForEmailVerification = Buffer.from(email, "utf8").toString(
-      "base64"
-    );
-    await insertOne(
-      "Users",
-      { email: email },
-      { email_otp: hashForEmailVerification }
-    );
-    const emailForgetPasswordVerificationLink = `${process.env.FORGET_PASSWORD_LINK}?email=${email}&token=${hashForEmailVerification}`;
+    const userDetails = await findQuery("Users", { email: email });
 
-    let dataReplacementForEmailVerification = {
-      resetPasswordlink: `${emailForgetPasswordVerificationLink}`,
-    };
+    console.log(userDetails);
 
-    readFileAndSendEmail(
-      email,
-      "FORGET PASSWORD",
-      dataReplacementForEmailVerification,
-      "forget_password"
-    );
+    if (isEmpty(userDetails)) {
+      const err = new Error("Email does not exist");
+      err.status = 400;
+      return next(err);
+    } else {
+      const otpForForgetPassword = generateOTP();
+      redisClient.set(`otp_${email}`, otpForForgetPassword, {
+        EX: 60 * 5,
+      });
 
-    res.status(200).send({
-      status: "success",
-      message: "Reset password link sent successfully",
-    });
+      const dataReplacementForOtpEmailVerification = {
+        fullname: ` ${userDetails[0].lastName}, ${userDetails[0].otherNames}`,
+        otp: `${otpForForgetPassword}`,
+      };
+
+      readFileAndSendEmail(
+        email,
+        "FORGET PASSWORD",
+        dataReplacementForOtpEmailVerification,
+        "forget_password"
+      );
+
+      res.status(200).send({
+        status: "success",
+        message: "Reset password otp code sent successfully",
+      });
+      return;
+    }
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -245,30 +258,13 @@ const completeForgetPassword = async (req, res) => {
   }
 };
 
-// const updateCustomerData = async (req, res, next) => {
-//   const { userData } = req.body;
-//   try {
-//     const updateCustomer = await findOneAndUpdate(
-//       "Users",
-//       { customer_id: userData.customer_id },
-//       userData
-//     );
-//     res.status(200).send({
-//       status: "success",
-//       message: "Details successfully updated",
-//     });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
 module.exports = {
   register,
+  resendOTP,
   verifyOtp,
   startForgetPassword,
   completeForgetPassword,
   // updateCustomerData,
-  resendOTP,
   // getCustomerCards,
   // startFundWalletWithNewCard,
   // changeCustomersPassword,

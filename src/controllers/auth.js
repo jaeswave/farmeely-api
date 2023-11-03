@@ -56,6 +56,7 @@ const login = async (req, res, next) => {
           message: "Login successful",
           token: token,
         });
+        console.log("here",token)
       }
     );
 
