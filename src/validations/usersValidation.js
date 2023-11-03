@@ -40,8 +40,7 @@ const login = Joi.object({
 })
 
 const completeForgotPassword = Joi.object({
-    email: Joi.string().email({ minDomainSegments: 2 }),
-    newPassword: Joi.string().min(8).regex(/^(?=\S*[a-z])(?=\S*[A-Z])(?=\S*\d)(?=\S*[^\w\s])\S{8,30}$/).required()
+    new_password: Joi.string().min(8).regex(/^(?=\S*[a-z])(?=\S*[A-Z])(?=\S*\d)(?=\S*[^\w\s])\S{8,30}$/).required()
         .label('Password')
         .messages({
         'string.empty': `"Password" cannot be an empty`,
@@ -49,10 +48,7 @@ const completeForgotPassword = Joi.object({
         'any.required': `"Password" is a required field`,
         'object.regex' : `Must have at least 8 characters`,
         'string.pattern.base': `Password must contain at least a number, letter and special characters`
-    }),
-    confirmNewPassword: Joi.string().required().valid(Joi.ref('newPassword'))
-    .label('Confirm password')
-    .messages({ 'any.only': '{{#label}} does not match password' })
+    })
     
 })
 

@@ -1,15 +1,15 @@
-const express = require("express");
-const router = express.Router();
-const validationData = require("../validations/usersValidation");
-const validationMiddleware = require("../middleware/validation");
-const authorization = require("../middleware/authorization");
+const express = require("express")
+const router = express.Router()
+const validationData = require("../validations/usersValidation")
+const validationMiddleware = require("../middleware/validation")
+const authorization = require("../middleware/authorization")
 const {
   register,
   resendOTP,
   startForgetPassword,
   completeForgetPassword,
-} = require("../controllers/users");
-const { login } = require("../controllers/auth");
+} = require("../controllers/users")
+const { login } = require("../controllers/auth")
 
 //USERS ROUTES
 
@@ -54,7 +54,7 @@ router.post(
   "/user/register",
   validationMiddleware(validationData.register),
   register
-);
+)
 
 // login
 /**
@@ -81,7 +81,7 @@ router.post(
  *        422:
  *          Bad Request
  */
-router.get("/user/login", validationMiddleware(validationData.login), login);
+router.post("/user/login", validationMiddleware(validationData.login), login)
 
 // resendSMSOTP
 /**
@@ -105,7 +105,7 @@ router.get("/user/login", validationMiddleware(validationData.login), login);
  *        422:
  *          Bad Request
  */
-router.get("/resend-otp/:email", resendOTP);
+router.get("/resend-otp/:email", resendOTP)
 
 // startForgetPassword
 /**
@@ -149,12 +149,12 @@ router.get("/resend-otp/:email", resendOTP);
  *       - application/json
  *     parameters:
  *       - name: email
- *         in: body
+ *         in: path
  *         required: true
- *       - name: newPassword
- *         in: body
+ *       - name: otp
+ *         in: path
  *         required: true
- *       - name: confirmNewPassword
+ *       - name: new_password
  *         in: body
  *         required: true
  *     responses:
@@ -163,11 +163,11 @@ router.get("/resend-otp/:email", resendOTP);
  *        422:
  *          Bad Request
  */
-// router.post(
-//   "/forget-password/complete",
-//   validationData.completeForgotPassword,
-//   completeForgetPassword
-// );
+router.post(
+  "/forget-password/complete/:email/:otp",
+  validationMiddleware(validationData.completeForgotPassword),
+  completeForgetPassword
+)
 
 // StartfundWallet
 /**
@@ -288,4 +288,4 @@ router.get("/resend-otp/:email", resendOTP);
  */
 // router.get("/get-cards", getCustomerCards);
 
-module.exports = router;
+module.exports = router
