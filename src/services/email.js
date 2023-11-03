@@ -23,7 +23,7 @@ const readFileAndSendEmail = async (
 	dataReplacement,
 	filename
 ) => {
-	let dirpath = path.join(__dirname, `../views/${filename}.html`)
+	let dirpath = path.join(__dirname, `../views/emails-template/${filename}.html`) 
 	let readTheFile = await readMyFileAndReturnPromise(dirpath)
 	const template = Handlebars.compile(readTheFile)
 	const result = template(dataReplacement)

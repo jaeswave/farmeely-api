@@ -125,15 +125,12 @@ router.get("/resend-otp/:email", resendOTP)
  *         required: true
  *     responses:
  *        200:
- *          description: A verification link has been sent to email
+ *          description: An Otp code has been sent to email
  *        422:
  *          Bad Request
  */
-// router.get(
-//   "/forget-password/start/:email",
-//   validationData.completeForgotPassword,
-//   startForgetPassword
-// );
+router.get("/forget-password/start/:email", startForgetPassword);
+
 
 // completeForgotPassword
 /**
