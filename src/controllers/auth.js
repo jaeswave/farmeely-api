@@ -10,7 +10,7 @@ const login = async (req, res, next) => {
   try {
     const checkIfUserExist = await findQuery("Users", { email: email });
     if (isEmpty(checkIfUserExist)) {
-      const err = new Error("Customer credentials doesn't exist");
+      const err = new Error("Customer credentials doesn't exist, please sign up !");
       err.status = 400;
       return next(err);
     }
@@ -44,26 +44,19 @@ const login = async (req, res, next) => {
         if (err) {
           return next(err);
         }
-
         delete payload.password_hash;
         delete payload.password_salt;
         delete payload.created_at;
-        delete payload.modified_at;
-
-        res.setHeader(authorization, token);
-        res.status(200).json({
-          status: true,
-          message: "Login successful",
-          token: token,
-        });
-        console.log("here",token)
+        delete payload.modified_at;     
       }
     );
-
+    res.setHeader(authorization, token);
     res.status(200).json({
       status: true,
       message: "Login successful",
+      authorization: token,
     });
+
   } catch (err) {
     next(err);
   }
