@@ -28,12 +28,24 @@ const insertOne = async (collection,data) =>{
     return insert_details
 }
 
-const updateOne = async (collection,data) =>{
+const updateOne = async (collection,item,data) =>{
     //todos
+    const Database = DbConnection.getDb()
+    const coll = Database.collection(collection)
+    const update = await coll.updateOne(item, {
+        $set: data,
+    })
+    return update
 }
 
 const updateMany = async (collection, data) => { 
  //todos
+ const Database = DbConnection.getDb()
+ const coll = Database.collection(collection)
+ const update = await coll.updateOne(item, {
+     $set: data
+ })
+ return update
 
 }
 
