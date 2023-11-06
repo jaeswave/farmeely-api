@@ -9,7 +9,8 @@ const {
   startForgetPassword,
   completeForgetPassword,
   editProfile,
-  startFundWallet
+  startFundWallet,
+  verifyOtp
 } = require("../controllers/users")
 const { login } = require("../controllers/auth")
 
@@ -133,7 +134,7 @@ router.get("/resend-otp/:email", resendOTP)
  */
 router.get("/forget-password/start/:email", startForgetPassword);
 
-
+router.get("/user/verify-otp/:otp/:email", verifyOtp)
 // completeForgotPassword
 /**
  * complete forget password
@@ -195,7 +196,7 @@ router.post(
  *        422:
  *          Bad Request
  */
-router.put('/user/edit-profile', authorization,validationMiddleware(validationData.edit), editProfile)
+router.patch('/user/edit-profile', authorization,validationMiddleware(validationData.edit), editProfile)
 
 // StartfundWallet
 /**

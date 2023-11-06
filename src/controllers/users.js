@@ -243,7 +243,7 @@ const completeForgetPassword = async (req, res, next) => {
 const editProfile = async (req, res , next) => {
 
   const {id} = req.params
-  const {lastname,othernames,address,gender,dob} = req.body
+  const {address,gender,dob} = req.body
 
   try {
     
