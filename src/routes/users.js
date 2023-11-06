@@ -8,6 +8,8 @@ const {
   resendOTP,
   startForgetPassword,
   completeForgetPassword,
+  editProfile,
+  startFundWallet
 } = require("../controllers/users")
 const { login } = require("../controllers/auth")
 
@@ -141,7 +143,7 @@ router.get("/forget-password/start/:email", startForgetPassword);
  *     summary: complete forget password
  *     description: This completes customer forget password, setting a new password
  *     tags:
- *       - Account
+ *       - Users
  *     produces:
  *       - application/json
  *     parameters:
@@ -165,6 +167,35 @@ router.post(
   validationMiddleware(validationData.completeForgotPassword),
   completeForgetPassword
 )
+
+/**
+ * update user profile
+ * @swagger
+ * /user/edit-profile:
+ *   post:
+ *     summary: update user profile
+ *     description: This updates the profile of the user 
+ *     tags:
+ *       - Users
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: dob
+ *         in: body
+ *         required: false
+ *       - name: address
+ *         in: body
+ *         required: false
+ *       - name: gender
+ *         in: body
+ *         required: false
+ *     responses:
+ *        200:
+ *          description: User profile updated successfully.
+ *        422:
+ *          Bad Request
+ */
+router.put('/user/edit-profile', authorization,validationMiddleware(validationData.edit), editProfile)
 
 // StartfundWallet
 /**
@@ -191,11 +222,7 @@ router.post(
  *        422:
  *          Bad Request
  */
-// router.post(
-//   "/fund-wallet-with-new-card/start",
-//   validationData.fundWalletWithNewCard,
-//   startFundWalletWithNewCard
-// );
+router.post("/fund-wallet-with-new-card/start",startFundWallet);
 
 // CompletefundWallet
 /**

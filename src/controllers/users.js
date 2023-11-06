@@ -163,7 +163,6 @@ const startForgetPassword = async (req, res, next) => {
   try {
     const userDetails = await findQuery("Users", { email: email });
 
-    console.log(userDetails);
 
     if (isEmpty(userDetails)) {
       const err = new Error("Email does not exist");
@@ -241,12 +240,53 @@ const completeForgetPassword = async (req, res, next) => {
   }
 }
 
+const editProfile = async (req, res , next) => {
+
+  const {id} = req.params
+  const {lastname,othernames,address,gender,dob} = req.body
+
+  try {
+    
+    const checkUserTable = await findQuery("Users", {customer_id: id}, {lastname,othernames,address,gender,dob} )
+    
+   if(isEmpty(checkUserTable)){
+    const err = new Error("An error occur, try later!")
+    err.status = 400
+    return next(err)
+
+   }
+
+ await updateOne("Users", {customer_id: id}, {lastname:lastname,othernames:othernames,address:address,gender:gender,dob:dob } )
+
+
+res.status(200).send({
+  status: "success",
+  message: "Your Profile details has been updated successfully.",
+})
+  } catch (error) {
+    next(error)
+  }
+}
+
+const startFundWallet = async (req, res, next) => {
+
+  try {
+    
+  } catch (error) {
+
+    next(error)
+    
+  }
+}
+
 module.exports = {
   register,
   resendOTP,
   verifyOtp,
   startForgetPassword,
   completeForgetPassword,
+  editProfile,
+  startFundWallet
   // updateCustomerData,
   // getCustomerCards,
   // startFundWalletWithNewCard,

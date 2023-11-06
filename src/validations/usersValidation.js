@@ -58,6 +58,15 @@ const updateUserInfo = Joi.object({
     bankName: Joi.string().required()
 })
 
+const edit = Joi.object({
+    lastname: Joi.string().optional(),
+    othernames: Joi.string().optional(),
+    address: Joi.string().optional(),
+    gender: Joi.string().optional(),
+    dob: Joi.string().optional(),
+
+})
+
 
 
 
@@ -92,5 +101,6 @@ module.exports = {
     register,login,completeForgotPassword,
     // changePassword,
      updateUserInfo,
+     edit
     
 }
