@@ -11,16 +11,17 @@ const getAllProducts = async (req, res, next) => {
 
         const products = await findQuery("Products", {})
 
-        if(isEmpty(products)){
-            const err = new Error("No products found")
-            err.status = 400
-            return next(err)
-        }
+        // const liveStock = products.filter(product => product.category_id  === product_id)
+        // console.log("liveStock:",liveStock)
 
         res.status(201).json({
             status: true,
             message: "Products fetched successfully ",
-            data: products
+            data: products 
+            // {
+            //     liveStock : liveStock,
+            //     farmPrduce : liveStock
+            // }
         })
         
     } catch (error) {
