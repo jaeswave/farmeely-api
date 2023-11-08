@@ -5,7 +5,7 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  othername: {
+  othernames: {
     type: String,
     required: true,
   },
@@ -18,43 +18,30 @@ const UserSchema = new mongoose.Schema({
     default: false,
     required: false,
   },
-
   gender: {
     type: String,
-    values: ["male", "female"],
-    allowNull: false,
+    values: ["male", "female", "others"],
+    default: null,
+    required: false,
   },
+  phoneNumber: {
+    type: Number,
+    unique: true,
+  },
+
   dob: {
     type: Date,
+    default: null,
     required: false,
   },
   referral_code: {
     type: String,
-    default: true,
+    default: null,
     required: false,
   },
-  address_number: {
+  address: {
     type: String,
-    required: false,
-  },
-  address_street: {
-    type: String,
-    required: false,
-  },
-  address_city: {
-    type: String,
-    required: false,
-  },
-  address_state: {
-    type: String,
-    required: false,
-  },
-  localgovt: {
-    type: String,
-    required: false,
-  },
-  state_of_origin: {
-    type: String,
+    default: null,
     required: false,
   },
   password_hash: {
@@ -65,17 +52,16 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: false,
   },
-  bvn: {
-    type: String,
-    required: false,
+
+  timestamps: {
+    createdAt: {
+      timestamps: true,
+    },
   },
-  isBvnVerified: {
-    type: String,
-    required: false,
-  },
-  isPasswordChangeRequired: {
-    type: String,
-    required: false,
+  timestamps: {
+    updatedAt: {
+      timestamps: true,
+    },
   },
 });
 

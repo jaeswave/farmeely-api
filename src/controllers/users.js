@@ -1,5 +1,11 @@
-const { findQuery, insertOne, updateOne } = require("../repository");
+const {
+  findQuery,
+  insertOne,
+  updateOne,
+  updateMany,
+} = require("../repository");
 const { v4: uuidv4 } = require("uuid");
+const bcrypt = require("bcrypt");
 const {
   isEmpty,
   hashMyPassword,
@@ -163,8 +169,6 @@ const startForgetPassword = async (req, res, next) => {
   try {
     const userDetails = await findQuery("Users", { email: email });
 
-    console.log(userDetails);
-
     if (isEmpty(userDetails)) {
       const err = new Error("Email does not exist");
       err.status = 400;
@@ -176,7 +180,7 @@ const startForgetPassword = async (req, res, next) => {
       });
 
       const dataReplacementForOtpEmailVerification = {
-        fullname: ` ${userDetails[0].lastName}, ${userDetails[0].otherNames}`,
+        fullname: ` ${userDetails[0].lastname}, ${userDetails[0].othernames}`,
         otp: `${otpForForgetPassword}`,
       };
 
@@ -198,56 +202,48 @@ const startForgetPassword = async (req, res, next) => {
   }
 };
 
-const completeForgetPassword = async (req, res) => {
-  const { email, hash } = req.params;
+const completeForgetPassword = async (req, res, next) => {
+  const { email, otp } = req.params;
   const { new_password } = req.body;
 
-  if (!email || !hash || !new_password) {
-    res.status(400).json({
-      status: false,
-      message: "Bad request",
-    });
-    return;
-  }
+  console.log("email", email);
   try {
-    const checkIfHashMatch = await findQuery(
-      "Users",
-      { email: email },
-      { email_otp: hash }
-    );
-    if (isEmpty(checkIfHashMatch)) {
-      const err = new Error(
-        `Invalid link, please check your email again, details shared is ${JSON.stringify(
-          req.params
-        )}`
-      );
+    if (!email || !otp || !new_password) {
+      const err = new Error("Bad request");
       err.status = 400;
       return next(err);
     }
-    if (
-      checkIfHashMatch[0].phone_otp_created_at <
-      new Date().getTime() - 360000 //1 hour
-    ) {
-      const err = new Error(
-        `Link has expired, please request for a new one, details shared is ${JSON.stringify(
-          req.params
-        )}`
-      );
+
+    const checkOtpFromRedis = await redisClient.get(`otp_${email}`);
+
+    console.log("checkOtpFromRedis", checkOtpFromRedis);
+
+    if (isEmpty(checkOtpFromRedis)) {
+      const err = new Error("Invalid otp");
       err.status = 400;
       return next(err);
     }
+
+    if (otp != checkOtpFromRedis) {
+      const err = new Error("Invalid Otp and/or expired otp");
+      err.status = 400;
+      return next(err);
+    }
+
     const newPasswordHashAndSalt = await hashMyPassword(new_password);
 
-    //updating the customer's password
-    await Account.query()
-      .update({
-        password_salt: newPasswordHashAndSalt[0],
-        password_hash: newPasswordHashAndSalt[1],
-      })
-      .where("email", email);
+    await updateMany(
+      "Users",
+      { email: email },
+      {
+        $and: [
+          { password_salt: newPasswordHashAndSalt[0] },
+          { password_hash: newPasswordHashAndSalt[1] },
+        ],
+      }
+    ); //update the password salt and has on database
 
-    //go ahead to delete otp to proceed the forget password
-    await findOneAnd("email", email);
+    redisClient.del(`otp_${email}`);
 
     res.status(200).send({
       status: "success",
@@ -258,14 +254,103 @@ const completeForgetPassword = async (req, res) => {
   }
 };
 
+const changeCustomersPassword = async (req, res, next) => {
+  const { old_password, new_password, confirm_new_password } = req.body;
+  const { customer_id } = req.params;
+  //   const { id } = req.params;
+
+  try {
+    if (!old_password || !new_password || !confirm_new_password) {
+      const err = new Error("All fields are required");
+      err.status = 400;
+      return next(err);
+    }
+
+    const checkUserData = await findQuery("Users", {
+      customer_id: customer_id,
+    });
+    if (isEmpty(checkUserData)) {
+      const err = new Error("Access Denied !");
+      err.status = 400;
+      return next(err);
+    }
+
+    const comparePassword = await bcrypt.compare(
+      old_password,
+      checkUserData[0].password_hash
+    );
+    if (!comparePassword) {
+      const err = new Error("wrong");
+      err.status = 400;
+      return next(err);
+    }
+
+    const newPasswordHashAndSalt = await hashMyPassword(new_password);
+    const updateNewpassword = await updateOne(
+      "Users",
+      { customer_id: customer_id },
+      {
+        password_salt: newPasswordHashAndSalt[0],
+        password_hash: newPasswordHashAndSalt[1],
+      }
+    );
+    console.log("me", updateNewpassword);
+
+    res.status(200).send({
+      status: "success",
+      message: "Password successfully changed",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+// const startFundWalletWithNewCard = async (req, res) => {
+
+//   const { amount, saveCard, userData } = req.body
+//   console.log("object oo: ", userData)
+
+
+//   try {
+//     //add card
+//     /*
+//             2. verify payment
+//             3. add card to db
+
+//         */
+//     const amountToDebit = amount || 100;
+
+//     const startAdCardPayment = await initializePayment(
+//       amountToDebit,
+//       userData.email
+//     );
+//     if (startAdCardPayment.data.status == false) {
+//       const err = new Error(
+//         "Something went wrong while initializng transaction."
+//       );
+//       err.status = 400;
+//       return next(err);
+//     }
+
+//     res.status(200).send({
+//       status: "success",
+//       message: "Payment Initialized",
+//       data: customerBankData,
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 module.exports = {
   register,
   resendOTP,
   verifyOtp,
   startForgetPassword,
   completeForgetPassword,
+  changeCustomersPassword,
   // updateCustomerData,
   // getCustomerCards,
   // startFundWalletWithNewCard,
-  // changeCustomersPassword,
 };
