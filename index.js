@@ -74,7 +74,7 @@ const swaggerDefinition = {
     
 const options = {
     swaggerDefinition,
-    apis: [`.src/routes/*.js`],
+    apis: [`./src/routes/*.js`],
 }
 const swaggerSpec = swaggerJSDoc(options)
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))

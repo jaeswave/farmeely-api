@@ -1,7 +1,6 @@
 const { findQuery, updateOne } = require("../repository")
 const { isEmpty } = require("../utils")
-
-
+const {PRODUCT_CATEGORY_ID} = require("../enums/products")
 
 
 
@@ -9,19 +8,19 @@ const getAllProducts = async (req, res, next) => {
 
     try {
 
+
         const products = await findQuery("Products", {})
 
-        // const liveStock = products.filter(product => product.category_id  === product_id)
-        // console.log("liveStock:",liveStock)
+        const liveStock = products.filter(product => ( product.category_id === PRODUCT_CATEGORY_ID.livestock_category_id) ) 
+        const farmProduce = products.filter(product => (product.category_id === PRODUCT_CATEGORY_ID.farmProduct_category_id)  ) 
 
         res.status(201).json({
             status: true,
             message: "Products fetched successfully ",
-            data: products 
-            // {
-            //     liveStock : liveStock,
-            //     farmPrduce : liveStock
-            // }
+            products:{
+                liveStock : liveStock,
+                farmPrduce : farmProduce
+            }
         })
         
     } catch (error) {
