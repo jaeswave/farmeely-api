@@ -246,15 +246,6 @@ const editProfile = async (req, res , next) => {
 
   try {
     
-    const checkUserTable = await findQuery("Users", {customer_id: customer_id})
-    
-   if(isEmpty(checkUserTable)){
-    const err = new Error("An error occur, try later!")
-    err.status = 400
-    return next(err)
-
-   }
-
  await updateOne("Users", {customer_id: customer_id}, req.body )
 
 
