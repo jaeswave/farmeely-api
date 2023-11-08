@@ -1,8 +1,8 @@
-const express = require("express")
-const router = express.Router()
-const validationData = require("../validations/usersValidation")
-const validationMiddleware = require("../middleware/validation")
-const authorization = require("../middleware/authorization")
+const express = require("express");
+const router = express.Router();
+const validationData = require("../validations/usersValidation");
+const validationMiddleware = require("../middleware/validation");
+const authorization = require("../middleware/authorization");
 const {
   register,
   resendOTP,
@@ -10,9 +10,9 @@ const {
   completeForgetPassword,
   editProfile,
   startFundWallet,
-  verifyOtp
-} = require("../controllers/users")
-const { login } = require("../controllers/auth")
+  verifyOtp,
+} = require("../controllers/users");
+const { login } = require("../controllers/auth");
 
 //USERS ROUTES
 
@@ -57,7 +57,7 @@ router.post(
   "/user/register",
   validationMiddleware(validationData.register),
   register
-)
+);
 
 // login
 /**
@@ -84,7 +84,34 @@ router.post(
  *        422:
  *          Bad Request
  */
-router.post("/user/login", validationMiddleware(validationData.login), login)
+router.post("/user/login", validationMiddleware(validationData.login), login);
+
+// verifyOtp
+/**
+ * verify customer's account
+ * @swagger
+ * /customer/verify-otp/{otp}/{email}:
+ *   get:
+ *     summary: verify account
+ *     description: verify customer's account via otp sent to customer
+ *     tags:
+ *       - Users
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: otp
+ *         in: path
+ *         required: true
+ *       - name: email
+ *         in: path
+ *         required: true
+ *     responses:
+ *        200:
+ *          description: Account verification successfully
+ *        422:
+ *          Bad Request
+ */
+router.patch("/user/verify-otp/:otp/:email", verifyOtp);
 
 // resendSMSOTP
 /**
@@ -108,7 +135,7 @@ router.post("/user/login", validationMiddleware(validationData.login), login)
  *        422:
  *          Bad Request
  */
-router.get("/resend-otp/:email", resendOTP)
+router.get("/resend-otp/:email", resendOTP);
 
 // startForgetPassword
 /**
@@ -134,7 +161,6 @@ router.get("/resend-otp/:email", resendOTP)
  */
 router.get("/forget-password/start/:email", startForgetPassword);
 
-router.get("/user/verify-otp/:otp/:email", verifyOtp)
 // completeForgotPassword
 /**
  * complete forget password
@@ -167,7 +193,7 @@ router.post(
   "/forget-password/complete/:email/:otp",
   validationMiddleware(validationData.completeForgotPassword),
   completeForgetPassword
-)
+);
 
 /**
  * update user profile
@@ -175,7 +201,7 @@ router.post(
  * /user/edit-profile:
  *   post:
  *     summary: update user profile
- *     description: This updates the profile of the user 
+ *     description: This updates the profile of the user
  *     tags:
  *       - Users
  *     produces:
@@ -196,121 +222,11 @@ router.post(
  *        422:
  *          Bad Request
  */
-router.patch('/user/edit-profile', authorization,validationMiddleware(validationData.edit), editProfile)
+router.patch(
+  "/user/edit-profile",
+  authorization,
+  validationMiddleware(validationData.edit),
+  editProfile
+);
 
-// StartfundWallet
-/**
- * start fund wallet with new card
- * @swagger
- * /customer/fund-wallet-with-new-card/start:
- *   post:
- *     summary: Start Fund wallet with new card
- *     description: This add bank account to the customers account
- *     tags:
- *       - Account
- *     produces:
- *       - application/json
- *     parameters:
- *       - name: amount
- *         in: body
- *         required: true
- *       - name: saveCard
- *         in: body
- *         required: true
- *     responses:
- *        200:
- *          description: Wallet Funded.
- *        422:
- *          Bad Request
- */
-router.post("/fund-wallet-with-new-card/start",startFundWallet);
-
-// CompletefundWallet
-/**
- * complete fund wallet with new card
- * @swagger
- * /customer/fund-wallet-with-new-card/complete:
- *   post:
- *     summary: Verify Fund wallet with new card
- *     description: This Verifies Fund wallet with new card
- *     tags:
- *       - Account
- *     produces:
- *       - application/json
- *     parameters:
- *       - name: transactionReference
- *         in: body
- *         required: true
- *     responses:
- *        200:
- *          description: Wallet Funded.
- *        422:
- *          Bad Request
- */
-// router.post(
-//   "/fund-wallet-with-new-card/complete",
-//   validationData.fundWalletWithNewCard,
-//   startFundWalletWithNewCard
-// );
-
-// Dashboard
-/**
- * get customer dashboard details
- * @swagger
- * /customer/dashboard:
- *   get:
- *     summary: get a customer's dashboard
- *     description: This get all the dashboard details
- *     tags:
- *       - Account
- *     produces:
- *       - application/json
- *     responses:
- *        200:
- *          description: Dashboard successfully fetched
- *        422:
- *          Bad Request
- */
-// router.get("/dashboard", dashboard);
-
-//  Get bank list
-/**
- * get bank list
- * @swagger
- * /customer/bank/lists:
- *   get:
- *     summary: get bank lists
- *     description: This get all the bank lists
- *     tags:
- *       - Account
- *     produces:
- *       - application/json
- *     responses:
- *        200:
- *          description: Bank successfully fetched.
- *        422:
- *          Bad Request
- */
-// router.get("/bank/lists", getBankLists);
-
-// Get customer cards details
-/**
- * get customer card
- * @swagger
- * /customer/get-cards:
- *   get:
- *     summary: get  customer's card
- *     description: This get a customer's all card
- *     tags:
- *       - Account
- *     produces:
- *       - application/json
- *     responses:
- *        200:
- *          description: Customer Cards fetched
- *        422:
- *          Bad Request
- */
-// router.get("/get-cards", getCustomerCards);
-
-module.exports = router
+module.exports = router;

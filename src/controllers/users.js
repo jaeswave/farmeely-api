@@ -242,12 +242,11 @@ const completeForgetPassword = async (req, res, next) => {
 
 const editProfile = async (req, res , next) => {
 
-  const {id} = req.params
-  const {address,gender,dob} = req.body
+  const {customer_id} = req.params
 
   try {
     
-    const checkUserTable = await findQuery("Users", {customer_id: id}, {lastname,othernames,address,gender,dob} )
+    const checkUserTable = await findQuery("Users", {customer_id: customer_id})
     
    if(isEmpty(checkUserTable)){
     const err = new Error("An error occur, try later!")
@@ -256,7 +255,7 @@ const editProfile = async (req, res , next) => {
 
    }
 
- await updateOne("Users", {customer_id: id}, {lastname:lastname,othernames:othernames,address:address,gender:gender,dob:dob } )
+ await updateOne("Users", {customer_id: customer_id}, req.body )
 
 
 res.status(200).send({
@@ -268,27 +267,11 @@ res.status(200).send({
   }
 }
 
-const startFundWallet = async (req, res, next) => {
-
-  try {
-    
-  } catch (error) {
-
-    next(error)
-    
-  }
-}
-
 module.exports = {
   register,
   resendOTP,
   verifyOtp,
   startForgetPassword,
   completeForgetPassword,
-  editProfile,
-  startFundWallet
-  // updateCustomerData,
-  // getCustomerCards,
-  // startFundWalletWithNewCard,
-  // changeCustomersPassword,
+  editProfile
 }
