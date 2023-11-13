@@ -230,4 +230,23 @@ router.patch(
   changeCustomersPassword
 );
 
+/**
+ * edit user profile
+ * @swagger
+ * /user/edit-profile:
+ *   patch:
+ *     summary: edit user profile
+ *     description: This allows user to edit and update their profile
+ *     tags:
+ *       - Users
+ *     produces:
+ *       - application/json
+ *     responses:
+ *        200:
+ *          description: User profile updated successfully.
+ *        422:
+ *          Bad Request
+ */
+router.patch("/user/edit-profile", authorization, editProfile);
+
 module.exports = router;
