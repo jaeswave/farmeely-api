@@ -1,26 +1,34 @@
-// const WalletModel = require('../models/walletModel')
-// const UserModel = require('../models/userModels')
-// const transactionModel = require('../models/transactionModel')
 const {
   TransactionStatusEnum,
   TransactionTypeEnum,
-} = require("../constants/enums");
+} = require("../enums/index");
 const { v4: uuidv4 } = require("uuid");
-const { findQuery } = require("../repository");
-const { isEmpty } = require("../utils");
-// const { startPayment, completePayment } = require('../services/payment')
+const { findQuery } = require("../repository/index");
+const { isEmpty } = require("../utils/index");
 
-const credit = async (amountPassed, user_id, comments) => {
+const credit = async (req, res, next) => {
+  const { amountPassed, comments } = req.body;
+  const { customer_id } = req.params;
+  try {
+    const checkUser = await findQuery("Transactions", {
+      customer_id: customer_id,
+    });
+    if (isEmpty(checkUser)) {
+      const err = new Error("Access Denied");
+      err.status = 400;
+      return next(err);
+    }
+  } catch (error) {}
   const amount = Math.abs(Number(amountPassed));
-  const userDetails = await getUserWallet(user_id);
+  const userDetails = await getUserWallet(customer_id);
   const initialbalance = Number(userDetails.amount_after);
-  const newbalance = initialbalance + amount; //amount_after
-  await updateWallet(user_id, initialbalance, newbalance);
+  const newbalance = initialbalance + amount;
+  await updateWallet(customer_id, initialbalance, newbalance);
   transaction(
     TransactionTypeEnum.CREDIT,
-    comments,
+    description,
     amount,
-    userDetails.user_id,
+    userDetails.customer_id,
     TransactionStatusEnum.SUCCESS
   );
   return;
@@ -34,20 +42,20 @@ const debit = async (amountPassed, user_id, comments) => {
     return [false, "Insufficient balance"];
   }
   const newbalance = initialbalance - amount; //amount_after
-  await updateWallet(user_id, initialbalance, newbalance);
+  await updateWallet(customer_id, initialbalance, newbalance);
   transaction(
     TransactionTypeEnum.DEBIT,
-    comments,
+    description,
     amount,
-    userDetails.user_id,
+    userDetails.customer_id,
     TransactionStatusEnum.SUCCESS
   );
   return true;
 };
 
-const transaction = async () => {
+const createTransaction = async () => {
   const { customer_id } = req.params;
-  const { type, description, amount, transaction_status } = req.body;
+  const { transType, description, amount, transaction_status } = req.body;
 
   try {
     const checkIfUserexist = await findQuery("Users", {
@@ -65,9 +73,9 @@ const transaction = async () => {
     return create("Transaction", {
       transaction_id: transaction_id,
       customer_id: userdata.customer_id,
-      transaction_type: type,
+      transaction_type: transType,
       amount: amount,
-      comments: description,
+      description: description,
       transaction_status: TransactionStatusEnum.transaction_status,
     });
   } catch (error) {}
@@ -81,29 +89,45 @@ const getUserWallet = async () => {
       customer_id: customer_id,
     });
     if (isEmpty(checkIfUserexist)) {
+      //Do i need to check for this since the auth will validate if the user is logged in
       const err = new Error("Access Denied !");
       err.status = 400;
       return next(err);
     }
     const customerWalletData = await findQuery({ customer_id: customer_id });
-    console.log("check: ", customerWalletData);
-    return customerWalletData[0];
+
+    res.status(200).json({
+      status: true,
+      message: "Invalid transaction reference",
+      data: customerWalletData[0],
+    });
   } catch (error) {
     next(error);
   }
 };
 
-const updateWallet = async (user_id, initial, after) => {
-  return await updateOne(
-    "Wallet",
-    {
-      amount_before: initial,
-      amount_after: after,
-    },
-    {
-      customer_id: customElements,
-    }
-  );
+const updateWallet = async (req, res, next) => {
+  const { customer_id, initial, current } = req.body;
+
+  try {
+    const checkToUpdateUserWallet = await updateOne(
+      "Wallet",
+      {
+        amount_before: initial,
+        amount_after: current,
+      },
+      {
+        customer_id: customer_id,
+      }
+    );
+    res.status(200).json({
+      status: true,
+      message: "Customer's wallet updated successfully",
+      data: checkToUpdateUserWallet,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 const startWalletFunding = async (req, res) => {
@@ -112,25 +136,23 @@ const startWalletFunding = async (req, res) => {
     if (!amount || !email) {
       res.status(400).json({
         status: false,
-        message: "Amount and email are required",
+        message: "All fields are required",
       });
     }
-    const userDetails = await findOne("", { email });
-    if (!userDetails) {
+    const userDetails = await findQuery("Wallet", { email:email });
+    if (isEmpty(userDetails)) {
       const err = new Error("Access Denied");
       err.status = 400;
       return next(err);
     }
     const initialiseTransaction = await startPayment(amount, email);
     delete initialiseTransaction.data.data.access_code;
-    
+
     res.status(200).json({
       status: true,
       message: "Transaction initialized successfully",
       data: initialiseTransaction.data.data,
     });
-
-
   } catch (error) {
     next(error);
   }
@@ -162,20 +184,22 @@ const completeWalletFunding = async (req, res) => {
 };
 
 const getWalletBalance = async (req, res) => {
-  const user_id = "29bb056b-8193-4682-bedb-4fbd5c5cac9d"; //req.params
+  const {customer_id} =  req.params
   try {
-    const getWallet = await getUserWallet(user_id);
-    const walletBalance = getWallet.amount_after;
+    const getcustomerWalletBalance = await findQuery("Wallet",{customer_id:customer_id}).amount_after;
+    // console.log('getCustomerWallet', getcustomerWalletBalance);
+    if (isEmpty(getcustomerWalletBalance)) {
+      const err = new Error("Error fetching wallet balance");
+      err.status = 400;
+      return next(err);
+    }
     return res.json({
       status: true,
-      balance: walletBalance,
       message: "wallet balance fetched successfully",
+      balance: getcustomerWalletBalance,
     });
   } catch (error) {
-    res.status(500).json({
-      status: false,
-      message: "Error fetching wallet balance",
-    });
+    next(error)
   }
 };
 
@@ -223,24 +247,12 @@ const sendMoney = async (req, res) => {
   }
 };
 
-const walletBalance = async (fullname, balance, date) => {
-  const userSurname = await UserModel.surname;
-  const userOthernames = await UserModel.othernames;
-  fullname = userSurname + userOthernames;
-  const userBalance = await updateWallet(user_id, initial, after);
-  balance = userBalance.amount_after;
-  const presentDate = Date.now();
-  date = presentDate;
-  return;
-};
-
 module.exports = {
   credit,
   debit,
-  transaction,
+  createTransaction,
   startWalletFunding,
   completeWalletFunding,
   getWalletBalance,
   sendMoney,
-  walletBalance,
 };

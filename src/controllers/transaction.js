@@ -1,4 +1,4 @@
-const { TRANSACTION_STATUS } = require("../constants/enums");
+const { transaction_type } = require("../enums/index");
 const { findQuery } = require("../repository");
 const { isEmpty } = require("../utils");
 
@@ -6,7 +6,6 @@ const getTransactions = async (req, res, next) => {
   const { page } = req.query;
   const limit = 5;
   const pages = page - 1 || 0;
-  //   const offset = pages * limit;
 
   try {
     const getAllTransactions = await findQuery("Transactions", {});
@@ -20,6 +19,27 @@ const getTransactions = async (req, res, next) => {
       status: true,
       message: "Transaction fetched successfully",
       data: getAllTransactions,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getUserTransaction = async (req, res, next) => {
+  const {customer_id} = req.params
+  try {
+    const userTransaction = await findQuery("Transaction", {
+      customer_id: customer_id,
+    });
+    if (isEmpty(userTransaction)) {
+      const err = new Error("Not found !");
+      err.status = 400;
+      return next(err);
+    }
+    res.status(200).json({
+      status: true,
+      message: "Customer transactions fetched successfully",
+      data: userTransaction,
     });
   } catch (error) {
     next(error);
@@ -44,10 +64,8 @@ const filterTransactionsWithDate = async (req, res, next) => {
       { timestamp: { createdAt: start, updatedAt: end } },
     ]);
 
-    console.log("findTransaction: ", getAllTransactionsViaDate);
-
     if (isEmpty(getAllTransactionsViaDate)) {
-      const err = new Error("NNo transactions during this period.");
+      const err = new Error("No transactions during this period.");
       err.status = 400;
       return next(err);
     }
@@ -64,12 +82,11 @@ const filterTransactionsWithDate = async (req, res, next) => {
 
 const filterTransactionType = async (req, res, next) => {
   try {
-    const { filter_by } = req.query;
-    let amount = filter_by;
+    const { amount, transactionType,  } = req.query;
 
-    if (filter_by === transactionTypeEnum.CREDIT) {
+    if (transactionType === transaction_type.credit) {
       const creditTransactions = await findQuery("Transactions", {
-        transaction_type: transactionTypeEnum.CREDIT,
+        transaction_type: transaction_type.credit,
       });
       if (isEmpty(creditTransactions)) {
         const err = new Error("No credit transaction found !");
@@ -81,9 +98,9 @@ const filterTransactionType = async (req, res, next) => {
         message: "All credit transactions fetched successfully",
         data: creditTransactions,
       });
-    } else if (filter_by === transactionTypeEnum.DEBIT) {
-      const debitTransactions = await transactionModel.findAll("Transactions", {
-        transaction_type: TRANSACTION_STATUS.DEBIT,
+    } else if (transactionType === transaction_type.debit) {
+      const debitTransactions = await findQuery("Transactions", {
+        transaction_type: transaction_type.debit,
       });
 
       if (isEmpty(debitTransactions)) {
@@ -97,7 +114,7 @@ const filterTransactionType = async (req, res, next) => {
         message: "All debit transactions fetched successfully",
         data: debitTransactions,
       });
-    } else if (filter_by === amount) {
+    } else if (amount === amount) {
       const transactionAmount = await findQuery("Transactions", {
         amount: amount,
       });
@@ -119,28 +136,23 @@ const filterTransactionType = async (req, res, next) => {
 
 const dailyTransaction = (req, res, next) => {
   const { transactionType } = req.query;
-  const { user_id } = req.body;
+  const { customer_id } = req.body;
 };
 const weeklyTransaction = (req, res, next) => {
   const { transactionType } = req.query;
-  const { user_id } = req.body;
+  const { customer_id } = req.body;
 };
 const monthlyTransaction = async (req, res, next) => {
   const { transactionType } = req.query;
-  const { user_id } = req.body;
+  const { customer_id } = req.body;
 };
-const getUserTransaction = (user_id) => {
-  return transactionModel.findAll({
-    where: {
-      user_id: user_id,
-    },
-  });
-};
+
 
 module.exports = {
   getTransactions,
-  filterTransaction,
+  filterTransactionType,
   filterTransactionsWithDate,
+  getUserTransaction,
   dailyTransaction,
   weeklyTransaction,
   monthlyTransaction,
