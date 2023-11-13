@@ -1,3 +1,4 @@
+const { string } = require("joi");
 const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema({
@@ -14,9 +15,8 @@ const UserSchema = new mongoose.Schema({
     required: true,
   },
   isOtpVerified: {
-    type: boolean,
+    type: string,
     default: false,
-    required: false,
   },
   gender: {
     type: String,

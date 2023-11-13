@@ -305,43 +305,20 @@ const changeCustomersPassword = async (req, res, next) => {
   }
 };
 
+const editProfile = async (req, res, next) => {
+  const { customer_id } = req.params;
 
-// const startFundWalletWithNewCard = async (req, res) => {
+  try {
+    await updateOne("Users", { customer_id: customer_id }, req.body);
 
-//   const { amount, saveCard, userData } = req.body
-//   console.log("object oo: ", userData)
-
-
-//   try {
-//     //add card
-//     /*
-//             2. verify payment
-//             3. add card to db
-
-//         */
-//     const amountToDebit = amount || 100;
-
-//     const startAdCardPayment = await initializePayment(
-//       amountToDebit,
-//       userData.email
-//     );
-//     if (startAdCardPayment.data.status == false) {
-//       const err = new Error(
-//         "Something went wrong while initializng transaction."
-//       );
-//       err.status = 400;
-//       return next(err);
-//     }
-
-//     res.status(200).send({
-//       status: "success",
-//       message: "Payment Initialized",
-//       data: customerBankData,
-//     });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
+    res.status(200).send({
+      status: "success",
+      message: "Your Profile details has been updated successfully.",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 module.exports = {
   register,
@@ -350,6 +327,7 @@ module.exports = {
   startForgetPassword,
   completeForgetPassword,
   changeCustomersPassword,
+  editProfile,
   // updateCustomerData,
   // getCustomerCards,
   // startFundWalletWithNewCard,

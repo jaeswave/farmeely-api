@@ -9,6 +9,8 @@ const {
   startForgetPassword,
   completeForgetPassword,
   changeCustomersPassword,
+  editProfile,
+  startFundWallet,
   verifyOtp,
 } = require("../controllers/users");
 const { login } = require("../controllers/auth");

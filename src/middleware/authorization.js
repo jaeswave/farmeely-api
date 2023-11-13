@@ -5,10 +5,11 @@ const jwtSecret = process.env.JWT_SECRET || "keep-secret-secure123#";
 
 const authorization = async (req, res, next) => {
   const { authorization } = req.headers;
+
   if (!authorization) {
     res.status(401).send({
       status: false,
-      message: "Unauthorized Access 1",
+      message: "Unauthorized Access",
     });
   } else {
     const tokenSplit = authorization.split(" ");

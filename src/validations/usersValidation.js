@@ -76,9 +76,65 @@ const changePassword = Joi.object({
     .messages({ 'any.only': '{{#label}} does not match password' })
 })
 
+const updateUserInfo = Joi.object({
+  bankCode: Joi.string().required(),
+  accountNumber: Joi.string().required(),
+  bankName: Joi.string().required()
+})
+
+const edit = Joi.object({
+  lastname: Joi.string().optional(),
+  othernames: Joi.string().optional(),
+  address: Joi.string().optional(),
+  gender: Joi.string().optional(),
+  dob: Joi.string().optional(),
+
+})
+
 module.exports = {
   register,
   login,
   completeForgotPassword,
   changePassword,
+  updateUserInfo,
+  edit,
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// const validateBank = (bankData) => {
+//     const bankSchema = Joi.object({
+//         account_number: Joi.number().required(),
+//         bank_code: Joi.number().required()
+        
+//     })
+//     return bankSchema.validate(bankData)
+// }
+
+// const changePassword = Joi.object({
+//     newPassword: Joi.string().required(),
+//     confirmNewPassword: Joi.string().required()
+// })
+
+
+
+
+
+module.exports = {
+    register,login,completeForgotPassword,
+    // changePassword,
+     updateUserInfo,
+     edit
+    
+}

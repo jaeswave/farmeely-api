@@ -28,18 +28,26 @@ const insertOne = async (collection, data) => {
   return insert_details;
 };
 
-const updateOne = async (collection, item, data) => {
-  //todos
-  const Database = DbConnection.getDb();
-  const coll = Database.collection(collection);
-  const update_details = await coll.updateOne(item, { $set: data });
-  return update_details;
-};
+const updateOne = async (collection,item, data) =>{
+    //todos
+    const Database = DbConnection.getDb()
+    const coll = Database.collection(collection)
+    const update = await coll.updateOne(item, {
+        $set: data
+    })
+    return update
+}
 
-const updateMany = async (collection, data) => {
-  //todos
-};
+const updateMany = async (collection,item, data) => { 
+ //todos
+ const Database = DbConnection.getDb()
+ const coll = Database.collection(collection)
+ const update = await coll.updateOne(item, {
+     $set: data
+ })
+ return update
 
+}
 module.exports = {
   find,
   findQuery,
