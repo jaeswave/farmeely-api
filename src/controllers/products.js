@@ -11,8 +11,8 @@ const getAllProducts = async (req, res, next) => {
 
         const products = await findQuery("Products", {})
 
-        const liveStock = products.filter(product => ( product.category_id === PRODUCT_CATEGORY_ID.livestock_category_id) ) 
-        const farmProduce = products.filter(product => (product.category_id === PRODUCT_CATEGORY_ID.farmProduct_category_id)  ) 
+        const liveStock = products.filter(product => ( product.category_id == PRODUCT_CATEGORY_ID.livestock_category_id) ) 
+        const farmProduce = products.filter(product => (product.category_id == PRODUCT_CATEGORY_ID.farmProduct_category_id)) 
 
         res.status(201).json({
             status: true,
