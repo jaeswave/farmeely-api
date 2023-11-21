@@ -12,6 +12,7 @@ const {
   editProfile,
   startFundWallet,
   verifyOtp,
+  getUserProfile
 } = require("../controllers/users");
 const { login } = require("../controllers/auth");
 
@@ -248,5 +249,24 @@ router.patch(
  *          Bad Request
  */
 router.patch("/user/edit-profile", authorization, editProfile);
+
+/**
+ * get user profile
+ * @swagger
+ * /user/get-profile:
+ *   get:
+ *     summary: get user profile
+ *     description: This allows user see their profile
+ *     tags:
+ *       - Users
+ *     produces:
+ *       - application/json
+ *     responses:
+ *        200:
+ *          description: User profile fetched successfully.
+ *        422:
+ *          Bad Request
+ */
+router.get("/user/get-profile", authorization, getUserProfile);
 
 module.exports = router;

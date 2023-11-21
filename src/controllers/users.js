@@ -320,6 +320,28 @@ const editProfile = async (req, res, next) => {
   }
 };
 
+const getUserProfile = async (req, res, next) => { 
+
+  const { customer_id } = req.params;
+
+  try {
+
+    const userDetails = await findQuery("Users", { customer_id: customer_id });
+
+    if (isEmpty(userDetails)) {
+      const err = new Error("Access Denied!");
+      err.status = 400;
+      return next(err);
+    }
+    res.status(200).send({
+      status: "success",
+      message: userDetails,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   register,
   resendOTP,
@@ -328,6 +350,7 @@ module.exports = {
   completeForgetPassword,
   changeCustomersPassword,
   editProfile,
+  getUserProfile
   // updateCustomerData,
   // getCustomerCards,
   // startFundWalletWithNewCard,
