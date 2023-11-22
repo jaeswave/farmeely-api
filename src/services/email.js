@@ -23,13 +23,13 @@ const readFileAndSendEmail = async (
 	dataReplacement,
 	filename
 ) => {
-	let dirpath = path.join(__dirname, `../views/${filename}.html`)
+	let dirpath = path.join(__dirname, `../views/emails-template/${filename}.html`) 
 	let readTheFile = await readMyFileAndReturnPromise(dirpath)
 	const template = Handlebars.compile(readTheFile)
 	const result = template(dataReplacement)
 	const msg = {
 		to: toEmail,
-		from: process.env.ZULFAH_EMAIL_SENDER, // Use the email address or domain you verified above
+		from: process.env.FARMEELY_EMAIL_SENDER,
 		subject: emailHeader,
 		html: result,
 	};
@@ -39,8 +39,9 @@ const readFileAndSendEmail = async (
 			return 'sucesss';
 		})
 		.catch((err) => {
-			console.log('error: ', JSON.stringify(err.response.body));
-			return 'failed';
+		
+			// console.log('error: ', JSON.stringify(err.response.body));
+			return 'FAILED'
 		});
 };
 
