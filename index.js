@@ -15,6 +15,7 @@ const  {redisClient} = require('./src/config/redis')
 const db = require('./src/config/database')
 const userRoutes = require('./src/routes/users')
 const productRoutes = require('./src/routes/products')
+const faqRoutes = require('./src/routes/faq')
 const app = express()
 
 // Use Helmet!
@@ -30,6 +31,7 @@ app.use(express.urlencoded({ extended: true }))// parse urlencoded request body
 //v1 routes
 app.use('/api/v1/', userRoutes)
 app.use('/api/v1/', productRoutes)
+app.use('/api/v1/', faqRoutes)
 
 //connect to database
 db.connect()
