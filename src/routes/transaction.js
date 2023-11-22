@@ -11,7 +11,7 @@ const authorization = require('../middleware/authorization');
  *     summary: get all customer transactions
  *     description: This get all customer's transactions and filter (amount)
  *     tags:
- *       - Wallet
+ *       - Transaction
  *     produces:
  *       - application/json
  *     parameters:

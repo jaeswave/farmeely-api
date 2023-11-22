@@ -70,7 +70,7 @@ router.post(
  *     summary: fetches a user record
  *     description: This fetches a user's record
  *     tags:
- *       - Users
+ *       - Auth
  *     produces:
  *       - application/json
  *     parameters:
