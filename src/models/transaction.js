@@ -6,14 +6,17 @@ const transactionSchema = new mongoose.Schema(
       type: String,
       primaryKey: true,
     },
+    
     customer_id: {
       type: String,
       required: false,
     },
+
     order_id: {
       type: String,
       required: false,
     },
+
     transaction_type: {
       type: String,
       values: ["credit", "debit"],
@@ -21,17 +24,28 @@ const transactionSchema = new mongoose.Schema(
     amount: {
       type: String,
       required: false,
+      defaultValue: null
+
     },
     description: {
       type: String,
       required: true,
+      defaultValue: null
+
     },
+    reference: {
+      type: String,
+      required: true,
+      defaultValue: null
+    },
+
     transaction_status: {
       type: String,
       values: ["pending", "completed", "failed"],
       required: true,
       defaultValue: "pending",
     },
+
     createdAt: {
       type: Timestamp(),
       default: new Date(),

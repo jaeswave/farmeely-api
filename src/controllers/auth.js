@@ -54,7 +54,7 @@ const login = async (req, res, next) => {
           res.setHeader("authorization", token);
           res.status(200).json({
             status: true,
-            message: "Login successful"
+            message: "Login successful",
           });
         }
       }

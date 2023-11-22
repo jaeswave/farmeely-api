@@ -13,7 +13,11 @@ const swaggerUi = require('swagger-ui-express')
 const port = process.env.APP_PORT || 3000
 const  {redisClient} = require('./src/config/redis')
 const db = require('./src/config/database')
+const displayRoutes = require('express-routemap');
 const userRoutes = require('./src/routes/users')
+const walletRoutes = require('./src/routes/wallet')
+const transactionRoutes = require('./src/routes/transaction')
+
 const app = express()
 
 // Use Helmet!
@@ -28,7 +32,12 @@ app.use(express.urlencoded({ extended: true }))// parse urlencoded request body
 
 //v1 routes
 app.use('/api/v1/', userRoutes)
+app.use('/api/v1/', walletRoutes)
+app.use('/api/v1/', transactionRoutes)
 
+
+
+displayRoutes(app)
 //connect to database
 db.connect()
 //connect to redis

@@ -6,19 +6,31 @@ const walletSchema = new mongoose.Schema({
     required: true,
     primaryKey: true,
   },
+
+  wallet_type: {
+    type: String,
+    value: ['spend', 'save', 'borrow'], //1-spend, 2-save, 3-borrow
+    required: true,
+  },
+
+  currency: {
+    type: String,
+    values:['NGN', 'USD'],
+    required: true,
+    primaryKey: true,
+  },
+
   customer_id: {
     type: String,
     required: true,
   },
-  amount_before: {
+  balance_before: {
     type: String,
     required: true,
-    defaultValue: 0,
   },
-  amount_after: {
+  balance_after: {
     type: String,
     required: true,
-    defaultValue: 0,
   },
 },  { timestamps: true } 
 );

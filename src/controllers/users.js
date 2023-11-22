@@ -14,6 +14,7 @@ const {
 } = require("../utils");
 const { redisClient } = require("../config/redis");
 const { readFileAndSendEmail } = require("../services/email");
+const { createWallet } = require("./wallet");
 
 const register = async (req, res, next) => {
   const {
@@ -40,6 +41,8 @@ const register = async (req, res, next) => {
     const HashedPasswordAndSalt = await hashMyPassword(password);
     const customer_id = uuidv4();
 
+
+
     const createCustomer = await insertOne("Users", {
       customer_id: customer_id,
       lastname: lastname,
@@ -58,11 +61,11 @@ const register = async (req, res, next) => {
         "Cannot create customer this time. Please try again soon !"
       );
       err.status = 400;
-      return next(err);
+      return (err);
     }
+     await createWallet("spend", "NGN", customer_id)
 
     const otpValue = generateOTP();
-
     redisClient.set(`otp_${email}`, otpValue, {
       EX: 60 * 5,
     });
@@ -83,9 +86,9 @@ const register = async (req, res, next) => {
       status: "success",
       message: "Account created successfully",
     });
+
   } catch (error) {
-    console.log(error);
-    return next(error);
+    next(error);
   }
 };
 
@@ -101,7 +104,7 @@ const resendOTP = async (req, res, next) => {
         "Resend Otp",
         {
           fullname: `Buddy`,
-          otp: `${checkFromRedis}`, //the otp value is not null from redis
+          otp: `${checkFromRedis}`,
         },
         "otp"
       );
@@ -257,7 +260,6 @@ const completeForgetPassword = async (req, res, next) => {
 const changeCustomersPassword = async (req, res, next) => {
   const { old_password, new_password, confirm_new_password } = req.body;
   const { customer_id } = req.params;
-  //   const { id } = req.params;
 
   try {
     if (!old_password || !new_password || !confirm_new_password) {
@@ -286,7 +288,7 @@ const changeCustomersPassword = async (req, res, next) => {
     }
 
     const newPasswordHashAndSalt = await hashMyPassword(new_password);
-    const updateNewpassword = await updateOne(
+    await updateOne(
       "Users",
       { customer_id: customer_id },
       {
@@ -294,7 +296,6 @@ const changeCustomersPassword = async (req, res, next) => {
         password_hash: newPasswordHashAndSalt[1],
       }
     );
-    console.log("me", updateNewpassword);
 
     res.status(200).send({
       status: "success",

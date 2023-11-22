@@ -160,7 +160,7 @@ router.get("/resend-otp/:email", resendOTP);
  *        422:
  *          Bad Request
  */
-router.get("/forget-password/start/:email", startForgetPassword);
+router.get("/forget-password/start/:email", authorization, startForgetPassword);
 
 // completeForgotPassword
 /**
@@ -191,7 +191,7 @@ router.get("/forget-password/start/:email", startForgetPassword);
  *          Bad Request
  */
 router.post(
-  "/forget-password/complete/:email/:otp",
+  "/forget-password/complete/:email/:otp", authorization,
   validationMiddleware(validationData.completeForgotPassword),
   completeForgetPassword
 );
