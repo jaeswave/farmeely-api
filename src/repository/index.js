@@ -47,6 +47,14 @@ const updateMany = async (collection,item, data) => {
  return update
 
 }
+
+const deleteOne = async (collection, data) => {
+  const Database = DbConnection.getDb();
+  const coll = Database.collection(collection);
+  const delete_details = await coll.deleteOne(data);
+  return delete_details;
+};
+
 module.exports = {
   find,
   findQuery,
@@ -54,4 +62,5 @@ module.exports = {
   insertOne,
   updateOne,
   updateMany,
+  deleteOne
 };

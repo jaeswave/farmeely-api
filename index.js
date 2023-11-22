@@ -15,6 +15,8 @@ const  {redisClient} = require('./src/config/redis')
 const db = require('./src/config/database')
 const displayRoutes = require('express-routemap');
 const userRoutes = require('./src/routes/users')
+const productRoutes = require('./src/routes/products')
+const faqRoutes = require('./src/routes/faq')
 const walletRoutes = require('./src/routes/wallet')
 const transactionRoutes = require('./src/routes/transaction')
 
@@ -32,6 +34,8 @@ app.use(express.urlencoded({ extended: true }))// parse urlencoded request body
 
 //v1 routes
 app.use('/api/v1/', userRoutes)
+app.use('/api/v1/', productRoutes)
+app.use('/api/v1/', faqRoutes)
 app.use('/api/v1/', walletRoutes)
 app.use('/api/v1/', transactionRoutes)
 
