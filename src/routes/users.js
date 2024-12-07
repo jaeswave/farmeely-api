@@ -1,8 +1,8 @@
-const express = require("express");
-const router = express.Router();
-const validationData = require("../validations/usersValidation");
-const validationMiddleware = require("../middleware/validation");
-const authorization = require("../middleware/authorization");
+const express = require("express")
+const router = express.Router()
+const validationData = require("../validations/usersValidation")
+const validationMiddleware = require("../middleware/validation")
+const authorization = require("../middleware/authorization")
 const {
   register,
   resendOTP,
@@ -12,9 +12,9 @@ const {
   editProfile,
   startFundWallet,
   verifyOtp,
-  getUserProfile
-} = require("../controllers/users");
-const { login } = require("../controllers/auth");
+  getUserProfile,
+} = require("../controllers/users")
+const { login } = require("../controllers/auth")
 
 //USERS ROUTES
 
@@ -59,7 +59,7 @@ router.post(
   "/user/register",
   validationMiddleware(validationData.register),
   register
-);
+)
 
 // login
 /**
@@ -86,7 +86,7 @@ router.post(
  *        422:
  *          Bad Request
  */
-router.post("/user/login", validationMiddleware(validationData.login), login);
+router.post("/user/login", validationMiddleware(validationData.login), login)
 
 // verifyOtp
 /**
@@ -113,7 +113,7 @@ router.post("/user/login", validationMiddleware(validationData.login), login);
  *        422:
  *          Bad Request
  */
-router.patch("/verify/:otp/:email", verifyOtp);
+router.patch("/verify/:otp/:email", verifyOtp)
 
 // resendSMSOTP
 /**
@@ -137,7 +137,7 @@ router.patch("/verify/:otp/:email", verifyOtp);
  *        422:
  *          Bad Request
  */
-router.get("/resend-otp/:email", resendOTP);
+router.get("/resend-otp/:email", resendOTP)
 
 // startForgetPassword
 /**
@@ -161,7 +161,7 @@ router.get("/resend-otp/:email", resendOTP);
  *        422:
  *          Bad Request
  */
-router.get("/forget-password/start/:email", authorization, startForgetPassword);
+router.get("/forget-password/start/:email", authorization, startForgetPassword)
 
 // completeForgotPassword
 /**
@@ -192,10 +192,10 @@ router.get("/forget-password/start/:email", authorization, startForgetPassword);
  *          Bad Request
  */
 router.post(
-  "/forget-password/complete/:email/:otp", authorization,
+  "/forget-password/complete/:email/:otp",
   validationMiddleware(validationData.completeForgotPassword),
   completeForgetPassword
-);
+)
 
 /**
  * change customers password
@@ -229,7 +229,7 @@ router.patch(
   authorization,
   validationMiddleware(validationData.changePassword),
   changeCustomersPassword
-);
+)
 
 /**
  * edit user profile
@@ -248,7 +248,12 @@ router.patch(
  *        422:
  *          Bad Request
  */
-router.patch("/user/edit-profile", authorization, editProfile);
+router.patch(
+  "/user/edit-profile",
+  authorization,
+  validationMiddleware(validationData.edit),
+  editProfile
+)
 
 /**
  * get user profile
@@ -267,6 +272,6 @@ router.patch("/user/edit-profile", authorization, editProfile);
  *        422:
  *          Bad Request
  */
-router.get("/user/get-profile", authorization, getUserProfile);
+router.get("/user/get-profile", authorization, getUserProfile)
 
-module.exports = router;
+module.exports = router

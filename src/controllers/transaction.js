@@ -1,36 +1,45 @@
 // const { transaction_type } = require("../enums/index");
-const { findQuery } = require("../repository");
-const { isEmpty } = require("../utils");
+const { findQuery, insertOne } = require("../repository")
+const { isEmpty } = require("../utils")
+const { v4: uuidv4 } = require("uuid")
+
+const createTransaction = (
+  reference,
+  amountPassed,
+  transaction_status,
+  customer_id,
+  email,
+  description
+) => {
+  const transaction_id = uuidv4()?.replaceAll("-", "")
+
+  return insertOne("Transactions", {
+    transaction_id: transaction_id,
+    reference: reference,
+    email: email || null,
+    description: description || null,
+    amountPassed: amountPassed,
+    transaction_status: transaction_status,
+    customer_id: customer_id,
+  })
+}
 
 const getTransactions = async (req, res, next) => {
-  const { customer_id } = req.params;
-  const { amount } = req.query;
-
+  const { customer_id } = req.params
   try {
     const getAllTransactions = await findQuery("Transactions", {
       customer_id: customer_id,
-    });
-    console.log("object", getAllTransactions);
-    if (isEmpty(getAllTransactions)) {
-      const err = new Error("No transaction found !");
-      err.status = 400;
-      return next(err);
-    }
-
-    const FilterByAmount = await getAllTransactions.filter(
-      (getAllTransaction) => getAllTransaction.amountPassed == amount
-    );
+    })
 
     res.status(200).json({
       status: true,
       message: "Transaction fetched successfully",
       data: getAllTransactions,
-      FilterByAmount: FilterByAmount,
-    });
+    })
   } catch (error) {
-    next(error);
+    next(error)
   }
-};
+}
 
 // const getUserTransaction = async (req, res, next) => {
 //   const { customer_id } = req.params;
@@ -156,10 +165,11 @@ const getTransactions = async (req, res, next) => {
 
 module.exports = {
   getTransactions,
+  createTransaction,
   // filterTransactionType,
   // filterTransactionsWithDate,
   // getUserTransaction,
   // dailyTransaction,
   // weeklyTransaction,
   // monthlyTransaction,
-};
+}

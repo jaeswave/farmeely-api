@@ -3,16 +3,17 @@ const { isEmpty } = require("../utils")
 const { PRODUCT_CATEGORY_ID } = require("../enums/products")
 
 const getAllProducts = async (req, res, next) => {
+
   try {
     const products = await findQuery("Products", {})
 
     const liveStock = products.filter(
       (product) =>
-        product.category_id == PRODUCT_CATEGORY_ID.livestock_category_id
+        product.category === PRODUCT_CATEGORY_ID.livestock_category
     )
     const farmProduce = products.filter(
       (product) =>
-        product.category_id == PRODUCT_CATEGORY_ID.farmProduct_category_id
+        product.category === PRODUCT_CATEGORY_ID.farmProduct_category
     )
 
     res.status(201).json({

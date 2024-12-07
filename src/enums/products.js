@@ -1,8 +1,8 @@
 
 
 const PRODUCT_CATEGORY_ID ={
-    livestock_category_id: 0,
-    farmProduct_category_id: 1
+    livestock_category: "livestock",
+    farmProduct_category: "farm_product"
 }
 
 module.exports ={

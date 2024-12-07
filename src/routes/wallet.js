@@ -1,13 +1,11 @@
-const express = require("express");
-const router = express.Router();
+const express = require("express")
+const router = express.Router()
 const {
   startWalletFunding,
   completeWalletFunding,
   getWalletBalance,
-  walletBalance,
-  sendMoney,
-} = require("../controllers/wallet");
-const authorization = require("../middleware/authorization");
+} = require("../controllers/wallet")
+const authorization = require("../middleware/authorization")
 
 /**
  * start-fund-wallet
@@ -33,7 +31,7 @@ const authorization = require("../middleware/authorization");
  *        422:
  *          Bad Request
  */
-router.post("/start-fund-wallet/", authorization, startWalletFunding);
+router.post("/start-fund-wallet/", authorization, startWalletFunding)
 
 /**
  * complete-fund-wallet
@@ -62,11 +60,11 @@ router.post("/start-fund-wallet/", authorization, startWalletFunding);
  *        422:
  *          Bad Request
  */
-router.post(
-  "/complete-fund-wallet/{reference}",
+router.get( 
+ "/complete-fund-wallet/:reference" ,
   authorization,
   completeWalletFunding
-);
+)
 
 /**
  * get-wallet-balance
@@ -89,6 +87,6 @@ router.post(
  *        422:
  *          Bad Request
  */
-router.get("/get-wallet-balance", authorization, getWalletBalance);
+router.get("/get-wallet-balance", authorization, getWalletBalance)
 
-module.exports = router;
+module.exports = router

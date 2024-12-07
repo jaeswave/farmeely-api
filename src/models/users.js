@@ -1,5 +1,5 @@
-const { string } = require("joi");
-const mongoose = require("mongoose");
+const { string } = require("joi")
+const mongoose = require("mongoose")
 
 const UserSchema = new mongoose.Schema({
   lastname: {
@@ -20,7 +20,7 @@ const UserSchema = new mongoose.Schema({
   },
   gender: {
     type: String,
-    values: ["male", "female", "others"],
+    values: ["male", "female"],
     default: null,
     required: false,
   },
@@ -63,8 +63,8 @@ const UserSchema = new mongoose.Schema({
       timestamps: true,
     },
   },
-});
+})
 
-const Users = mongoose.model("Users", UserSchema);
+const Users = mongoose.model("Users", UserSchema)
 
-module.exports = { Users };
+module.exports = { Users }
