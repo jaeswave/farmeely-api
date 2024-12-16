@@ -21,6 +21,8 @@ const createTransaction = (
     amountPassed: amountPassed,
     transaction_status: transaction_status,
     customer_id: customer_id,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   })
 }
 

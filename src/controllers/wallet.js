@@ -85,7 +85,11 @@ const startWalletFunding = async (req, res, next) => {
       err.status = 400
       return next(err)
     }
-    const initialiseTransaction = await startPayment(amount, email)
+    const initialiseTransaction = await startPayment(
+      amount,
+      email,
+      "http://localhost:3000/payment-success"
+    )
     console.log("initialiseTransaction:", initialiseTransaction)
     delete initialiseTransaction.data.data.access_code
 
@@ -103,12 +107,6 @@ const completeWalletFunding = async (req, res, next) => {
   const { reference, customer_id, email } = req.params
 
   try {
-    if (isEmpty(reference)) {
-      res.status(400).json({
-        status: false,
-        message: "Transaction could not be completed, invalid reference !",
-      })
-    }
     const checkIfReferenceExist = await findQuery("Transactions", {
       reference: reference,
     })
@@ -117,9 +115,15 @@ const completeWalletFunding = async (req, res, next) => {
       err.status = 400
       return next(err)
     }
+    if (isEmpty(reference)) {
+      res.status(400).json({
+        status: false,
+        message: "Transaction could not be completed!",
+      })
+    }
 
     const completeTransaction = await completePayment(reference)
-    console.log("complete", completeTransaction)
+
     if (completeTransaction.data.data.status != "success") {
       const err = new Error("Invalid transaction reference !")
       err.status = 400

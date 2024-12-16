@@ -1,7 +1,7 @@
 require("dotenv").config()
 const axios = require("axios")
 
-const startPayment = async (amount, email) => {
+const startPayment = async (amount, email, callback_url) => {
   const amountInKobo = amount * 100
   return axios({
     method: "POST",
@@ -12,6 +12,7 @@ const startPayment = async (amount, email) => {
     data: {
       amount: amountInKobo,
       email: email,
+      callback_url: callback_url,
     },
     channels: ["card"],
   })
