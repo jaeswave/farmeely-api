@@ -19,6 +19,8 @@ const productRoutes = require('./src/routes/products')
 const faqRoutes = require('./src/routes/faq')
 const walletRoutes = require('./src/routes/wallet')
 const transactionRoutes = require('./src/routes/transaction')
+const farmeelyRoute = require("./src/routes/farmeely").default
+
 
 const app = express()
 
@@ -38,6 +40,7 @@ app.use('/api/v1/', productRoutes)
 app.use('/api/v1/', faqRoutes)
 app.use('/api/v1/', walletRoutes)
 app.use('/api/v1/', transactionRoutes)
+app.use("/api/v1/", farmeelyRoute)
 
 
 
