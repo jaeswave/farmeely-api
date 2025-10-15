@@ -1,5 +1,5 @@
 const MINIMUM_FARMEELY_PRICE = {
-  price: 50000,
+  price: 5000,
   quarterOfTheProductPrice: 0.25,
 }
 

@@ -1,24 +1,66 @@
 const { TransactionStatusEnum, TransactionTypeEnum } = require("../enums/index")
 const { v4: uuidv4 } = require("uuid")
-const { findQuery, insertOne, updateOne } = require("../repository/index")
+const {
+  findQuery,
+  insertOne,
+  updateOne,
+  updateWithOperators,
+} = require("../repository/index");
 const { isEmpty } = require("../utils/index")
 const { startPayment, completePayment } = require("../services/payment")
 const { createTransaction } = require("./transaction")
 
+
+// const credit = async (amountPassed, customer_id) => {
+//   try {
+//     const amount = Math.abs(Number(amountPassed))
+//     const userDetails = await getUserWallet(customer_id)
+//     const initialbalance = Number(userDetails[0].balance)
+//     const newbalance = initialbalance + amount
+
+//     await updateWallet(customer_id, newbalance)
+
+//     return
+//   } catch (error) {
+//     return error
+//   }
+// }
+
+
+
+
 const credit = async (amountPassed, customer_id) => {
   try {
-    const amount = Math.abs(Number(amountPassed))
-    const userDetails = await getUserWallet(customer_id)
-    const initialbalance = Number(userDetails[0].balance)
-    const newbalance = initialbalance + amount
+    const amount = Math.abs(Number(amountPassed));
 
-    await updateWallet(customer_id, newbalance)
+    if (isNaN(amount) || amount <= 0) {
+      throw new Error("Invalid amount");
+    }
 
-    return
+    const userDetails = await getUserWallet(customer_id);
+
+  
+
+    const initialbalance = Number(userDetails[0].balance);
+    const newbalance = initialbalance + amount;
+
+    const updateResult = await updateWallet(customer_id, newbalance);
+
+    if (updateResult.modifiedCount === 0) {
+      throw new Error("Failed to update wallet");
+    }
+
+    return {
+      success: true,
+      old_balance: initialbalance,
+      new_balance: newbalance,
+      amount_credited: amount,
+    };
   } catch (error) {
-    return error
+    // ✅ Throw error so caller knows it failed
+    throw error;
   }
-}
+};
 
 const debit = async (amountPassed, description, customer_id) => {
   const amount = Math.abs(Number(amountPassed))
@@ -54,19 +96,31 @@ const getUserWallet = async (customer_id) => {
   return await findQuery("Wallet", { customer_id: customer_id })
 }
 
+// const updateWallet = async (customer_id, newbalance) => {
+//   return await updateOne(
+//     "Wallet",
+//     {
+//       customer_id: customer_id,
+//     },
+//     {
+//       // balance: initial,
+//       balance: newbalance,
+//     }
+//   )
+// }
+
+
+// ✅ FIXED (using updateWithOperators):
 const updateWallet = async (customer_id, newbalance) => {
-  return await updateOne(
+  
+  return await updateWithOperators(
     "Wallet",
-    {
-      customer_id: customer_id,
-    },
-    {
-      // balance: initial,
-      balance: newbalance,
+    { customer_id: customer_id },
+    { 
+      $set: { balance: newbalance }
     }
   )
 }
-
 const startWalletFunding = async (req, res, next) => {
   const { amount } = req.body
   const { email, customer_id } = req.params
@@ -105,6 +159,7 @@ const startWalletFunding = async (req, res, next) => {
 
 const completeWalletFunding = async (req, res, next) => {
   const { reference, customer_id, email } = req.params
+  console.log(reference,customer_id,email)
 
   try {
     const checkIfReferenceExist = await findQuery("Transactions", {

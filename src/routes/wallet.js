@@ -4,6 +4,7 @@ const {
   startWalletFunding,
   completeWalletFunding,
   getWalletBalance,
+  credit
 } = require("../controllers/wallet")
 const authorization = require("../middleware/authorization")
 
@@ -32,6 +33,8 @@ const authorization = require("../middleware/authorization")
  *          Bad Request
  */
 router.post("/start-fund-wallet/", authorization, startWalletFunding)
+
+router.post("/credit", authorization, credit)
 
 /**
  * complete-fund-wallet

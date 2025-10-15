@@ -28,14 +28,22 @@ const insertOne = async (collection, data) => {
   return insert_details
 }
 
-const updateOne = async (collection, item, data) => {
-  const Database = DbConnection.getDb()
-  const coll = Database.collection(collection)
-  const update = await coll.updateOne(item, {
-    $set: data,
-  })
-  return update
-}
+
+const updateOne = async (collection, filter, update, options = {}) => {
+  const Database = DbConnection.getDb();
+  const coll = Database.collection(collection);
+  const result = await coll.updateOne(filter, update, options);
+  return result;
+};
+
+// const updateOne = async (collection, item, data) => {
+//   const Database = DbConnection.getDb()
+//   const coll = Database.collection(collection)
+//   const update = await coll.updateOne(item, {
+//     $set: data,
+//   })
+//   return update
+// }
 
 const updateMany = async (collection, item, data) => {
   const Database = DbConnection.getDb()
@@ -55,6 +63,18 @@ const deleteOne = async (collection, data) => {
   return delete_details
 }
 
+const updateWithOperators = async (
+  collection,
+  filter,
+  update,
+  options = {}
+) => {
+  const Database = DbConnection.getDb();
+  const coll = Database.collection(collection);
+  const result = await coll.updateOne(filter, update, options);
+  return result;
+};
+
 module.exports = {
   find,
   findQuery,
@@ -63,4 +83,5 @@ module.exports = {
   updateOne,
   updateMany,
   deleteOne,
+  updateWithOperators
 }

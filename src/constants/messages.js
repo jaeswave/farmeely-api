@@ -7,6 +7,7 @@ const messages = {
   cannotCreateUser: "Cannot create customer this time. Please try again soon !",
   accountCreated: "Account created successfully",
   provideEmail: "Provide a user email",
+  
 }
 
 module.exports = { messages }
