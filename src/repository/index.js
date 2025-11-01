@@ -36,15 +36,6 @@ const updateOne = async (collection, filter, update, options = {}) => {
   return result;
 };
 
-// const updateOne = async (collection, item, data) => {
-//   const Database = DbConnection.getDb()
-//   const coll = Database.collection(collection)
-//   const update = await coll.updateOne(item, {
-//     $set: data,
-//   })
-//   return update
-// }
-
 const updateMany = async (collection, item, data) => {
   const Database = DbConnection.getDb()
   const coll = Database.collection(collection)

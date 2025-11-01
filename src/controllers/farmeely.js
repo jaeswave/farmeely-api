@@ -15,10 +15,8 @@ const createFarmeely = async (req, res, next) => {
   // ✅ Access user data from req.params
   const user_id = req.params.customer_id;
   const user_email = req.params.email;
-  console.log("second", user_email);
 
   try {
-    console.log("🔍 Finding product:", product_id);
 
     // Find the product
     const [product] = await findQuery("Products", {
@@ -228,7 +226,54 @@ const joinFarmeely = async (req, res, next) => {
   }
 };
 
+
+
+
+const getSingleFarmeely = async (req, res, next) => {
+  const { slot_id } = req.params;
+
+  try {
+    const [farmeelySlot] = await findQuery("Farmeely", {
+      slot_id: slot_id,
+    });
+
+    if (!farmeelySlot) {
+      const err = new Error("Farmeely not found");
+      err.status = 400;
+      return next(err);
+    }
+
+    res.status(200).json({
+      status: true,
+      message: "Successfully fetched Farmeely",
+      data: farmeelySlot,
+    });
+  } catch (err) {
+    next(err);
+  }
+
+}
+
+
+const getAllFarmeely = async (req, res, next) => {
+  try {
+    const farmeelySlots = await findQuery("Farmeely", {});
+
+    res.status(200).json({
+      status: true,
+      message: "Successfully fetched Farmeely",
+      data: farmeelySlots,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+
+
 module.exports = {
   createFarmeely,
   joinFarmeely,
+  getSingleFarmeely,
+  getAllFarmeely,
 };

@@ -15,8 +15,7 @@ const { messages } = require("../constants/messages")
 
 const register = async (req, res, next) => {
   const {
-    lastname,
-    othernames,
+    fullname,
     email,
     phone_number,
     password,
@@ -40,8 +39,7 @@ const register = async (req, res, next) => {
 
     const createCustomer = await insertOne("Users", {
       customer_id: customer_id,
-      lastname: lastname,
-      othernames: othernames,
+      fullname: fullname,
       email: email,
       phone_number: phone_number,
       password_salt: HashedPasswordAndSalt[0],

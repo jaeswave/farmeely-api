@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const {getTransactions } = require('../controllers/transaction');
+const {getTransactions,debitWallet } = require('../controllers/transaction');
 const authorization = require('../middleware/authorization');
 
 
@@ -25,9 +25,9 @@ const authorization = require('../middleware/authorization');
  *          Bad Request
  */
 router.get('/get-all-transactions',authorization, getTransactions );
+router.post("/wallet/debit",authorization, debitWallet);
 
-// router.get('/filter-transactions', filterTransaction);
-// router.get('/filter-transactions-with-date', filterTransactionsWithDate);
+
 
 
 module.exports = router;

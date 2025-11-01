@@ -2,6 +2,11 @@ const { findQuery, updateOne } = require("../repository");
 const { isEmpty } = require("../utils");
 const { PRODUCT_CATEGORY_ID } = require("../enums/products");
 
+
+
+
+//create product
+
 const getAllProducts = async (req, res, next) => {
   try {
     const products = await findQuery("Products", {});
