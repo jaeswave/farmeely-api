@@ -161,7 +161,7 @@ router.get("/resend-otp/:email", resendOTP)
  *        422:
  *          Bad Request
  */
-router.get("/forget-password/start/:email", authorization, startForgetPassword)
+router.get("/forget-password/start/:email", startForgetPassword)
 
 // completeForgotPassword
 /**
@@ -251,7 +251,7 @@ router.patch(
 router.patch(
   "/user/edit-profile",
   authorization,
-  validationMiddleware(validationData.edit),
+  // validationMiddleware(validationData.edit),
   editProfile
 )
 
