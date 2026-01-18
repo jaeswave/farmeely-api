@@ -5,7 +5,7 @@ const redis = require("redis");
 
 // Option 1: Using REDIS_URL (most reliable)
 const redisClient = redis.createClient({
-  url: process.env.REDIS_URL, // Railway provides this
+  url: process.env.REDIS_PUBLIC_URL, // Use this instead of REDIS_URL
   password: process.env.REDIS_PASSWORD,
 });
 
