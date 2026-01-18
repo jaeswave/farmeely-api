@@ -9,7 +9,6 @@ const redisClient = redis.createClient({
   password: process.env.REDIS_PASSWORD,
 });
 
-
 redisClient
   .connect()
   .then(() => console.log("✅ Connected to Railway Redis!"))
