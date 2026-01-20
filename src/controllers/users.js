@@ -69,7 +69,7 @@ const register = async (req, res, next) => {
     });
 
     let dataReplacementForOtpVerification = {
-      fullname: ` ${lastname} ${othernames}`,
+      fullname: fullname,
       otp: `${otpValue}`,
     };
 
