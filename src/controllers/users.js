@@ -21,8 +21,8 @@ const { messages } = require("../constants/messages");
 
 const register = async (req, res, next) => {
   const {
-    firstname,
-    lastname,
+    lasttname,
+    othernames,
     email,
     phone_number,
     password,
@@ -45,8 +45,8 @@ const register = async (req, res, next) => {
 
     const createCustomer = await insertOne("Users", {
       customer_id: customer_id,
-      firstname: firstname,
       lastname: lastname,
+      othernames: othernames,
       email: email,
       phone_number: phone_number,
       password_salt: HashedPasswordAndSalt[0],
@@ -62,6 +62,9 @@ const register = async (req, res, next) => {
       err.status = 400;
       return err;
     }
+
+    console.log("otpValue:", otpValue);
+
     await createWallet("spend", "NGN", customer_id);
 
     const otpValue = generateOTP();
@@ -69,8 +72,10 @@ const register = async (req, res, next) => {
       EX: 60 * 5,
     });
 
+    console.log("otpValue:", otpValue);
+
     let dataReplacementForOtpVerification = {
-      fullname: `${lastname} ${firstname}`,
+      fullname: `${lastname} ${othernames}`,
       otp: `${otpValue}`,
     };
 
