@@ -21,7 +21,7 @@ const { messages } = require("../constants/messages");
 
 const register = async (req, res, next) => {
   const {
-    lasttname,
+    lastname,
     othernames,
     email,
     phone_number,
@@ -29,6 +29,7 @@ const register = async (req, res, next) => {
     who_referred_customer,
     signup_channel,
   } = req.body;
+
   try {
     const checkIfUserExist = await findQuery("Users", {
       $or: [{ email: email }, { phone_number: phone_number }],
@@ -45,8 +46,7 @@ const register = async (req, res, next) => {
 
     const createCustomer = await insertOne("Users", {
       customer_id: customer_id,
-      lastname: lastname,
-      othernames: othernames,
+      fullname: `${lastname} ${othernames}`,
       email: email,
       phone_number: phone_number,
       password_salt: HashedPasswordAndSalt[0],
@@ -63,8 +63,6 @@ const register = async (req, res, next) => {
       return err;
     }
 
-    console.log("otpValue:", otpValue);
-
     await createWallet("spend", "NGN", customer_id);
 
     const otpValue = generateOTP();
@@ -78,6 +76,8 @@ const register = async (req, res, next) => {
       fullname: `${lastname} ${othernames}`,
       otp: `${otpValue}`,
     };
+
+    console.log("hello world");
 
     readFileAndSendEmail(
       email,
