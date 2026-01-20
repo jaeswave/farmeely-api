@@ -45,7 +45,8 @@ const register = async (req, res, next) => {
 
     const createCustomer = await insertOne("Users", {
       customer_id: customer_id,
-      fullname: fullname,
+      firstname: firstname,
+      lastname: lastname,
       email: email,
       phone_number: phone_number,
       password_salt: HashedPasswordAndSalt[0],
