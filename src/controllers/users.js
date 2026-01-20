@@ -21,14 +21,14 @@ const { messages } = require("../constants/messages");
 
 const register = async (req, res, next) => {
   const {
-    fullname,
+    firstname,
+    lastname,
     email,
     phone_number,
     password,
     who_referred_customer,
     signup_channel,
   } = req.body;
-
   try {
     const checkIfUserExist = await findQuery("Users", {
       $or: [{ email: email }, { phone_number: phone_number }],
@@ -69,7 +69,7 @@ const register = async (req, res, next) => {
     });
 
     let dataReplacementForOtpVerification = {
-      fullname: fullname,
+      fullname: `${lastname} ${firstname}`,
       otp: `${otpValue}`,
     };
 
@@ -77,7 +77,7 @@ const register = async (req, res, next) => {
       email,
       "OTP VERIFICATION",
       dataReplacementForOtpVerification,
-      "otp"
+      "otp",
     );
 
     res.status(200).send({
@@ -111,7 +111,7 @@ const resendOTP = async (req, res, next) => {
           fullname: `Buddy`,
           otp: `${checkFromRedis}`,
         },
-        "otp"
+        "otp",
       );
     } else {
       const newOtp = generateOTP();
@@ -123,7 +123,7 @@ const resendOTP = async (req, res, next) => {
         email,
         "RESEND OTP",
         { fullname: `Buddy`, otp: `${newOtp}` },
-        "otp"
+        "otp",
       );
     }
 
@@ -196,7 +196,7 @@ const startForgetPassword = async (req, res, next) => {
         email,
         "FORGET PASSWORD",
         dataReplacementForOtpEmailVerification,
-        "forget_password"
+        "forget_password",
       );
 
       res.status(200).send({
@@ -244,7 +244,7 @@ const completeForgetPassword = async (req, res, next) => {
 
     if (comparePassword) {
       const err = new Error(
-        "Use a different password as this is similar to the old password"
+        "Use a different password as this is similar to the old password",
       );
       err.status = 400;
       return next(err);
@@ -258,7 +258,7 @@ const completeForgetPassword = async (req, res, next) => {
       {
         password_salt: newPasswordHashAndSalt[0],
         password_hash: newPasswordHashAndSalt[1],
-      }
+      },
     );
 
     redisClient.del(`otp_${email}`);
@@ -288,7 +288,7 @@ const changeCustomersPassword = async (req, res, next) => {
 
     const comparePassword = await bcrypt.compare(
       old_password,
-      checkUserData[0].password_hash
+      checkUserData[0].password_hash,
     );
     if (!comparePassword) {
       const err = new Error("Old password is incorrect");
@@ -298,17 +298,17 @@ const changeCustomersPassword = async (req, res, next) => {
 
     const comparePasswordOldAndNewPassword = await bcrypt.compare(
       new_password,
-      checkUserData[0].password_hash
+      checkUserData[0].password_hash,
     );
 
     console.log(
       "comparePasswordOldAndNewPassword:",
-      comparePasswordOldAndNewPassword
+      comparePasswordOldAndNewPassword,
     );
 
     if (comparePasswordOldAndNewPassword) {
       const err = new Error(
-        "Your new password cannot be the same as your old password."
+        "Your new password cannot be the same as your old password.",
       );
       err.status = 400;
       return next(err);
@@ -321,7 +321,7 @@ const changeCustomersPassword = async (req, res, next) => {
       {
         password_salt: newPasswordHashAndSalt[0],
         password_hash: newPasswordHashAndSalt[1],
-      }
+      },
     );
 
     res.status(200).send({
