@@ -43,17 +43,18 @@ app.use("/api/v1/", farmeelyRoute);
 
 displayRoutes(app);
 //connect to database
-db.connect();
-// connect to redis
-redisClient.on("error", (err) => {
-  console.error("❌ Redis connection error:", err);
-});
+
 // redisClient.connect().catch(() => {
 //   console.log("Redis client not connected");
 //   process.exit(1);
 // });
 
 app.listen(port, () => {
+  db.connect();
+  // connect to redis
+  redisClient.on("error", (err) => {
+    console.error("❌ Redis connection error:", err);
+  });
   console.log(`... listening on ${port}`);
 });
 

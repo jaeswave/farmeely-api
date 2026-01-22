@@ -67,7 +67,7 @@ const register = async (req, res, next) => {
 
     const otpValue = generateOTP();
     redisClient.set(`otp_${email}`, otpValue, {
-      EX: 60 * 5,
+      EX: 60 * 60,
     });
 
     console.log("otpValue:", otpValue);
