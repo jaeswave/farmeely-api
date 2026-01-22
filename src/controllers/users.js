@@ -164,7 +164,12 @@ const verifyOtp = async (req, res, next) => {
       err.status = 400;
       return next(err);
     }
-    await updateOne("Users", { email: email }, { isOtpVerified: true }); //update the otp on redis
+    // Correct way to call it
+    await updateOne(
+      "Users",
+      { email: email },
+      { $set: { isOtpVerified: true } },
+    );
 
     redisClient.del(`otp_${email}`); //Delete the otp on redis
 
