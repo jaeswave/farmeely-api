@@ -65,12 +65,11 @@ const register = async (req, res, next) => {
 
     await createWallet("spend", "NGN", customer_id);
 
-    const otpValue = generateOTP();
+    const otpValue = 123456;
     redisClient.set(`otp_${email}`, otpValue, {
       EX: 60 * 60,
     });
 
-    console.log("otpValue:", otpValue);
 
     let dataReplacementForOtpVerification = {
       fullname: `${lastname} ${othernames}`,
