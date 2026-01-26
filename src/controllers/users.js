@@ -70,7 +70,6 @@ const register = async (req, res, next) => {
       EX: 60 * 60,
     });
 
-
     let dataReplacementForOtpVerification = {
       fullname: `${lastname} ${othernames}`,
       otp: `${otpValue}`,
@@ -262,14 +261,25 @@ const completeForgetPassword = async (req, res, next) => {
 
     const newPasswordHashAndSalt = await hashMyPassword(new_password);
 
-    await updateMany(
+    await updateOne(
       "Users",
-      { email: email },
+      { email },
       {
-        password_salt: newPasswordHashAndSalt[0],
-        password_hash: newPasswordHashAndSalt[1],
+        $set: {
+          password_salt: newPasswordHashAndSalt[0],
+          password_hash: newPasswordHashAndSalt[1],
+        },
       },
     );
+
+    // await updateMany(
+    //   "Users",
+    //   { email: email },
+    //   {
+    //     password_salt: newPasswordHashAndSalt[0],
+    //     password_hash: newPasswordHashAndSalt[1],
+    //   },
+    // );
 
     redisClient.del(`otp_${email}`);
 
@@ -400,6 +410,128 @@ const getUserProfile = async (req, res, next) => {
   }
 };
 
+const addAddress = async (req, res, next) => {
+  try {
+    const { customer_id } = req.params;
+    const { address, city } = req.body;
+
+    // Validate required fields
+    if (!address || address.trim() === "") {
+      const err = new Error("Address is required");
+      err.status = 400;
+      return next(err);
+    }
+
+    // Get user details
+    const [userDetails] = await findQuery("Users", {
+      customer_id: customer_id,
+    });
+
+    if (isEmpty(userDetails)) {
+      const err = new Error("Access Denied!");
+      err.status = 400;
+      return next(err);
+    }
+
+    // Create new address object
+    const newAddress = {
+      address: address.trim(),
+      city: city,
+    };
+
+    // Check if this is the first address - make it default
+    const currentAddress = userDetails.address || [];
+    const isFirstAddress = currentAddress.length === 0;
+
+    // Prepare updated addresses array
+    const updatedAddresses = [...currentAddress, newAddress];
+
+    // Update user with new addresses array
+    await updateOne(
+      "Users",
+      { customer_id: customer_id },
+      { $set: { addresses: updatedAddresses } },
+    );
+
+    return res.status(201).json({
+      status: true,
+      message: "Address added successfully",
+      data: {
+        address: newAddress,
+        isFirstAddress: isFirstAddress,
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// Get all addresses for a user
+const getAddresses = async (req, res, next) => {
+  try {
+    const { customer_id } = req.params;
+
+    const [userDetails] = await findQuery("Users", {
+      customer_id: customer_id,
+    });
+
+    if (isEmpty(userDetails)) {
+      const err = new Error("Access Denied!");
+      err.status = 400;
+      return next(err);
+    }
+
+    const addresses = userDetails.address || [];
+
+    return res.status(200).json({
+      status: true,
+      message: "Addresses retrieved successfully",
+      data: {
+        addresses: addresses,
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// Delete an address
+const deleteAddress = async (req, res, next) => {
+  try {
+    const { customer_id, addressId } = req.params;
+    const { address, city } = req.body;
+
+    const [userDetails] = await findQuery("Users", {
+      customer_id: customer_id,
+    });
+
+    if (isEmpty(userDetails)) {
+      const err = new Error("Access Denied!");
+      err.status = 400;
+      return next(err);
+    }
+
+    const addresses = userDetails.address || [];
+
+    const updatedAddresses = addresses.filter(
+      (addr) => addr.address === address && addr.city === city,
+    );
+
+    await updateOne(
+      "Users",
+      { customer_id: customer_id },
+      { $set: { addresses: updatedAddresses } },
+    );
+
+    return res.status(200).json({
+      status: true,
+      message: "Address deleted successfully",
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   register,
   resendOTP,
@@ -409,4 +541,7 @@ module.exports = {
   changeCustomersPassword,
   editProfile,
   getUserProfile,
+  addAddress,
+  getAddresses,
+  deleteAddress,
 };

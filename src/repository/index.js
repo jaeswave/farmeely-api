@@ -29,23 +29,37 @@ const insertOne = async (collection, data) => {
 }
 
 
+
 const updateOne = async (collection, filter, update, options = {}) => {
   const Database = DbConnection.getDb();
   const coll = Database.collection(collection);
-  const result = await coll.updateOne(filter, update, options);
-  return result;
+  return await coll.updateOne(filter, update, options);
 };
 
-const updateMany = async (collection, item, data) => {
-  const Database = DbConnection.getDb()
-  const coll = Database.collection(collection)
+const updateMany = async (collection, filter, update, options = {}) => {
+  const Database = DbConnection.getDb();
+  const coll = Database.collection(collection);
+  return await coll.updateMany(filter, update, options);
+};
 
-  const update = await coll.updateOne(item, {
-    $set: data, // Pass fields directly to $set
-  })
 
-  return update
-}
+// const updateOne = async (collection, filter, update, options = {}) => {
+//   const Database = DbConnection.getDb();
+//   const coll = Database.collection(collection);
+//   const result = await coll.updateOne(filter, update, options);
+//   return result;
+// };
+
+// const updateMany = async (collection, item, data) => {
+//   const Database = DbConnection.getDb()
+//   const coll = Database.collection(collection)
+
+//   const update = await coll.updateOne(item, {
+//     $set: data, // Pass fields directly to $set
+//   })
+
+//   return update
+// }
 
 const deleteOne = async (collection, data) => {
   const Database = DbConnection.getDb()

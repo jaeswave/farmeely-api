@@ -2,30 +2,16 @@ const { findQuery, updateOne } = require("../repository");
 const { isEmpty } = require("../utils");
 const { PRODUCT_CATEGORY_ID } = require("../enums/products");
 
-
-
-
 //create product
 
 const getAllProducts = async (req, res, next) => {
   try {
     const products = await findQuery("Products", {});
-    console.log("📦 All products from DB:", products);
-
-    const liveStock = products.filter(
-      (product) => product.category === PRODUCT_CATEGORY_ID.livestock_category
-    );
-    const farmProduce = products.filter(
-      (product) => product.category === PRODUCT_CATEGORY_ID.farmProduct_category
-    );
 
     res.status(201).json({
       status: true,
       message: "Products fetched successfully ",
-      products: {
-        liveStock: liveStock,
-        farmPrduce: farmProduce,
-      },
+      data: products,
     });
   } catch (error) {
     next(error);

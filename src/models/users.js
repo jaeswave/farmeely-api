@@ -1,12 +1,12 @@
-const { string } = require("joi")
-const mongoose = require("mongoose")
+const { string } = require("joi");
+const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema({
   fullname: {
     type: String,
     required: true,
   },
-  
+
   email: {
     type: String,
     required: true,
@@ -31,6 +31,21 @@ const UserSchema = new mongoose.Schema({
     default: null,
     required: false,
   },
+
+  //address
+  address: [
+    {
+      address: {
+        type: String,
+        required: true,
+      },
+      city: {
+        type: String,
+        required: true,
+      }
+    },
+  ],
+
   referral_code: {
     type: String,
     default: null,
@@ -60,8 +75,8 @@ const UserSchema = new mongoose.Schema({
       timestamps: true,
     },
   },
-})
+});
 
-const Users = mongoose.model("Users", UserSchema)
+const Users = mongoose.model("Users", UserSchema);
 
-module.exports = { Users }
+module.exports = { Users };
