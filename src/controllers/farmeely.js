@@ -34,10 +34,10 @@ const createFarmeely = async (req, res, next) => {
 
     // Find the product
     const [product] = await findQuery("Products", {
-      product_id: Number(product_id)
+      product_id: Number(product_id),
     });
 
-    console.log("product", product[0]);
+    console.log("product", product);
 
     // if (product?.product_price < MINIMUM_FARMEELY_PRICE?.price) {
     //   const err = new Error(messages.unableToFarmeely);
@@ -48,7 +48,7 @@ const createFarmeely = async (req, res, next) => {
     // Check if there's already an active Farmeely in this location
     const [existingFarmeely] = await findQuery("Farmeely", {
       city: city,
-      slot_status: ACTIVE_SLOT_STATUS.active,
+      slot_status: "active",
     });
 
     if (existingFarmeely) {
