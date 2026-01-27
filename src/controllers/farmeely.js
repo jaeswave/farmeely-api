@@ -10,7 +10,7 @@ const {
 
 const createFarmeely = async (req, res, next) => {
   const { product_id } = req.params;
-  const { location, number_of_slot } = req.body;
+  const { address, city, number_of_slot } = req.body;
 
   // ✅ Access user data from req.params
   const user_id = req.params.customer_id;
@@ -31,7 +31,7 @@ const createFarmeely = async (req, res, next) => {
 
     // Check if there's already an active Farmeely in this location
     const [existingFarmeely] = await findQuery("Farmeely", {
-      location: location,
+      city: city,
       slot_status: ACTIVE_SLOT_STATUS.active,
     });
 
@@ -80,7 +80,8 @@ const createFarmeely = async (req, res, next) => {
       slot_id: slot_id,
       product_id: product_id,
       product_name: product.product_name,
-      location: location,
+      address: address,
+      city: city,
       total_slots: totalSlots,
       creator_slots_taken: creatorSlots,
       slots_available: availableSlots,
@@ -111,7 +112,8 @@ const createFarmeely = async (req, res, next) => {
       data: {
         farmeely_id: slot_id,
         product: product.product_name,
-        location: location,
+        address: address, 
+        city: city,
         creator_slots: creatorSlots,
         slots_available: availableSlots,
         price_per_slot: pricePerSlot,
@@ -126,7 +128,7 @@ const createFarmeely = async (req, res, next) => {
 
 const joinFarmeely = async (req, res, next) => {
   const { product_id } = req.params;
-  const { location, number_of_slot } = req.body;
+  const { address, city, number_of_slot } = req.body;
 
   // ✅ Get user data from middleware
   const user_id = req.params.customer_id;
@@ -136,7 +138,7 @@ const joinFarmeely = async (req, res, next) => {
     // 1. Find the active Farmeely slot for this product and location
     const [farmeelySlot] = await findQuery("Farmeely", {
       product_id: product_id,
-      location: location,
+      city: city,
       slot_status: ACTIVE_SLOT_STATUS.active,
     });
 
@@ -212,7 +214,8 @@ const joinFarmeely = async (req, res, next) => {
       data: {
         farmeely_id: farmeelySlot.slot_id,
         product: farmeelySlot.product_name,
-        location: location,
+        address: address,
+        city: city,
         slots_joined: slotsToJoin,
         price_per_slot: farmeelySlot.price_per_slot,
         total_amount: amountToPay,
