@@ -447,11 +447,19 @@ const addAddress = async (req, res, next) => {
     const updatedAddresses = [...currentAddress, newAddress];
 
     // Update user with new addresses array
-    await updateOne(
-      "Users",
-      { customer_id: customer_id },
-      { $set: { addresses: updatedAddresses } },
-    );
+   await updateOne(
+     "Users",
+     { customer_id },
+     {
+       $push: {
+         address: {
+           address: address.trim(),
+           city: city,
+         },
+       },
+     },
+   );
+
 
     return res.status(201).json({
       status: true,
@@ -481,14 +489,13 @@ const getAddresses = async (req, res, next) => {
       return next(err);
     }
 
-    const addresses = userDetails.address || [];
+    const addresses = userDetails.address
+    
 
     return res.status(200).json({
       status: true,
       message: "Addresses retrieved successfully",
-      data: {
-        addresses: addresses,
-      },
+      data: addresses,
     });
   } catch (error) {
     return next(error);
