@@ -23,6 +23,8 @@ const createFarmeely = async (req, res, next) => {
       product_id: product_id,
     });
 
+    console.log("product", product);
+
     // if (product?.product_price < MINIMUM_FARMEELY_PRICE?.price) {
     //   const err = new Error(messages.unableToFarmeely);
     //   err.status = 400;
