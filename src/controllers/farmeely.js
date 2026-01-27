@@ -24,7 +24,7 @@ const createFarmeely = async (req, res, next) => {
   try {
     console.log(
       "Creating Farmeely with:",
-      product_id,
+      typeof product_id,
       address,
       city,
       number_of_slot,
@@ -34,7 +34,7 @@ const createFarmeely = async (req, res, next) => {
 
     // Find the product
     const [product] = await findQuery("Products", {
-      product_id: product_id,
+      product_id: Number(product_id)
     });
 
     console.log("product", product[0]);
