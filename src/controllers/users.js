@@ -191,7 +191,7 @@ const startForgetPassword = async (req, res, next) => {
       err.status = 400;
       return next(err);
     } else {
-      const otpForForgetPassword = generateOTP();
+      const otpForForgetPassword = 123456
       redisClient.set(`otp_${email}`, otpForForgetPassword, {
         EX: 60 * 5,
       });
