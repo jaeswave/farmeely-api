@@ -1,7 +1,12 @@
 const { v4: uuidv4 } = require("uuid");
 const { isEmpty } = require("../utils");
 const { messages } = require("../constants/messages");
-const { findQuery, insertOne, updateOne, updateWithOperators } = require("../repository");
+const {
+  findQuery,
+  insertOne,
+  updateOne,
+  updateWithOperators,
+} = require("../repository");
 const { ObjectId } = require("mongodb");
 const {
   MINIMUM_FARMEELY_PRICE,
@@ -17,6 +22,15 @@ const createFarmeely = async (req, res, next) => {
   const user_email = req.params.email;
 
   try {
+    console.log(
+      "Creating Farmeely with:",
+      product_id,
+      address,
+      city,
+      number_of_slot,
+      user_id,
+      user_email,
+    );
 
     // Find the product
     const [product] = await findQuery("Products", {
@@ -39,7 +53,7 @@ const createFarmeely = async (req, res, next) => {
 
     if (existingFarmeely) {
       const err = new Error(
-        "An active Farmeely already exists in this location"
+        "An active Farmeely already exists in this location",
       );
       err.status = 400;
       return next(err);
@@ -53,7 +67,7 @@ const createFarmeely = async (req, res, next) => {
     // Validate slot selection
     if (creatorSlots > totalSlots) {
       const err = new Error(
-        `This ${product.product_name} allows maximum ${totalSlots} slots`
+        `This ${product.product_name} allows maximum ${totalSlots} slots`,
       );
       err.status = 400;
       return next(err);
@@ -67,7 +81,7 @@ const createFarmeely = async (req, res, next) => {
 
     // Calculate price per slot
     const pricePerSlot = Math.ceil(
-      parseInt(product.product_price) / totalSlots
+      parseInt(product.product_price) / totalSlots,
     );
     const creatorAmount = pricePerSlot * creatorSlots;
 
@@ -114,7 +128,7 @@ const createFarmeely = async (req, res, next) => {
       data: {
         farmeely_id: slot_id,
         product: product.product_name,
-        address: address, 
+        address: address,
         city: city,
         creator_slots: creatorSlots,
         slots_available: availableSlots,
@@ -146,7 +160,7 @@ const joinFarmeely = async (req, res, next) => {
 
     if (!farmeelySlot) {
       const err = new Error(
-        "No active Farmeely found for this product and location"
+        "No active Farmeely found for this product and location",
       );
       err.status = 400;
       return next(err);
@@ -154,7 +168,7 @@ const joinFarmeely = async (req, res, next) => {
 
     // 2. Check if user is already in this Farmeely
     const userAlreadyJoined = farmeelySlot.joined_users?.some(
-      (user) => user.user_id === user_id
+      (user) => user.user_id === user_id,
     );
 
     if (userAlreadyJoined) {
@@ -169,7 +183,7 @@ const joinFarmeely = async (req, res, next) => {
 
     if (slotsToJoin > farmeelySlot.slots_available) {
       const err = new Error(
-        `Only ${farmeelySlot.slots_available} slots available`
+        `Only ${farmeelySlot.slots_available} slots available`,
       );
       err.status = 400;
       return next(err);
@@ -192,23 +206,25 @@ const joinFarmeely = async (req, res, next) => {
         ? ACTIVE_SLOT_STATUS.inactive
         : ACTIVE_SLOT_STATUS.active;
 
-
-        // 6. Update Farmeely slot
-        await updateWithOperators("Farmeely", { slot_id: farmeelySlot.slot_id }, {
-          $inc: { slots_available: -slotsToJoin },
-          $push: {
-            joined_users: {
-              user_id: user_id,
-              user_email: user_email,
-              slots_joined: slotsToJoin,
-              amount_paid: amountToPay,
-              joined_at: new Date(),
-              is_creator: false,
-            },
+    // 6. Update Farmeely slot
+    await updateWithOperators(
+      "Farmeely",
+      { slot_id: farmeelySlot.slot_id },
+      {
+        $inc: { slots_available: -slotsToJoin },
+        $push: {
+          joined_users: {
+            user_id: user_id,
+            user_email: user_email,
+            slots_joined: slotsToJoin,
+            amount_paid: amountToPay,
+            joined_at: new Date(),
+            is_creator: false,
           },
-          $set: { slot_status: updatedSlotStatus },
-        });
-
+        },
+        $set: { slot_status: updatedSlotStatus },
+      },
+    );
 
     res.status(200).json({
       status: true,
@@ -230,9 +246,6 @@ const joinFarmeely = async (req, res, next) => {
     next(err);
   }
 };
-
-
-
 
 const getSingleFarmeely = async (req, res, next) => {
   const { slot_id } = req.params;
@@ -256,9 +269,7 @@ const getSingleFarmeely = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-
-}
-
+};
 
 const getAllFarmeely = async (req, res, next) => {
   try {
@@ -272,9 +283,7 @@ const getAllFarmeely = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-}
-
-
+};
 
 module.exports = {
   createFarmeely,
