@@ -15,38 +15,21 @@ const {
 
 const createFarmeely = async (req, res, next) => {
   const { product_id } = req.params;
-  const { address, city, number_of_slot } = req.body;
+  const { address, city, number_of_slot, expected_date } = req.body;
 
   // ✅ Access user data from req.params
   const user_id = req.params.customer_id;
   const user_email = req.params.email;
 
   try {
-    console.log(
-      "Creating Farmeely with:",
-      typeof product_id,
-      address,
-      city,
-      number_of_slot,
-      user_id,
-      user_email,
-    );
-
     // Find the product
     const [product] = await findQuery("Products", {
       product_id: Number(product_id),
     });
 
-    console.log("product", product);
-
-    // if (product?.product_price < MINIMUM_FARMEELY_PRICE?.price) {
-    //   const err = new Error(messages.unableToFarmeely);
-    //   err.status = 400;
-    //   return next(err);
-    // }
-
     // Check if there's already an active Farmeely in this location
     const [existingFarmeely] = await findQuery("Farmeely", {
+      product_id,
       city: city,
       slot_status: "active",
     });
@@ -96,6 +79,7 @@ const createFarmeely = async (req, res, next) => {
       slot_id: slot_id,
       product_id: product_id,
       product_name: product.product_name,
+      expected_date,
       address: address,
       city: city,
       total_slots: totalSlots,
@@ -153,9 +137,9 @@ const joinFarmeely = async (req, res, next) => {
   try {
     // 1. Find the active Farmeely slot for this product and location
     const [farmeelySlot] = await findQuery("Farmeely", {
-      product_id: product_id,
+      product_id: Number(product_id), // Convert product_id to number
       city: city,
-      slot_status: ACTIVE_SLOT_STATUS.active,
+      slot_status: "active",
     });
 
     if (!farmeelySlot) {

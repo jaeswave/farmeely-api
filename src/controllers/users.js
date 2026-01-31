@@ -31,7 +31,7 @@ const register = async (req, res, next) => {
   } = req.body;
 
   try {
-    const checkIfUserExist = await findQuery("Users", {
+    const [checkIfUserExist] = await findQuery("Users", {
       $or: [{ email: email }, { phone_number: phone_number }],
     });
 
@@ -191,7 +191,7 @@ const startForgetPassword = async (req, res, next) => {
       err.status = 400;
       return next(err);
     } else {
-      const otpForForgetPassword = 123456
+      const otpForForgetPassword = 123456;
       redisClient.set(`otp_${email}`, otpForForgetPassword, {
         EX: 60 * 5,
       });
@@ -447,19 +447,18 @@ const addAddress = async (req, res, next) => {
     const updatedAddresses = [...currentAddress, newAddress];
 
     // Update user with new addresses array
-   await updateOne(
-     "Users",
-     { customer_id },
-     {
-       $push: {
-         address: {
-           address: address.trim(),
-           city: city,
-         },
-       },
-     },
-   );
-
+    await updateOne(
+      "Users",
+      { customer_id },
+      {
+        $push: {
+          address: {
+            address: address.trim(),
+            city: city,
+          },
+        },
+      },
+    );
 
     return res.status(201).json({
       status: true,
@@ -489,8 +488,7 @@ const getAddresses = async (req, res, next) => {
       return next(err);
     }
 
-    const addresses = userDetails.address
-    
+    const addresses = userDetails.address;
 
     return res.status(200).json({
       status: true,
