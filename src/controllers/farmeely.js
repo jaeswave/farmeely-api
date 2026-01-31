@@ -112,6 +112,7 @@ const createFarmeely = async (req, res, next) => {
       data: {
         farmeely_id: slot_id,
         product: product.product_name,
+        expected_date,
         address: address,
         city: city,
         creator_slots: creatorSlots,
