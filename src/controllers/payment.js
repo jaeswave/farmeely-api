@@ -44,12 +44,6 @@ const verifyPayment = async (req, res) => {
         message: "Payment verification failed",
         data: response.data,
       });
-    } else if (response.data.status === "success") {
-      // Update transaction status to completed
-      await Transaction.updateOne(
-        { reference: reference },
-        { $set: { transaction_status: "completed" } },
-      );
     }
 
     return res.status(200).json(response.data);
