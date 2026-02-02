@@ -1,7 +1,4 @@
-const {
-  startPayment,
-  completePayment,
-} = require("../services/payment");
+const { startPayment, completePayment } = require("../services/payment");
 
 // Initialize payment
 const initializePayment = async (req, res) => {
@@ -31,6 +28,7 @@ const initializePayment = async (req, res) => {
 const verifyPayment = async (req, res) => {
   try {
     const { reference } = req.params;
+    const user_id = req.params.customer_id;
 
     if (!reference) {
       return res.status(400).json({
@@ -39,6 +37,12 @@ const verifyPayment = async (req, res) => {
     }
 
     const response = await completePayment(reference);
+    if (response.data.status !== "success") {
+      return res.status(400).json({
+        message: "Payment verification failed",
+        data: response.data,
+      });
+    }
 
     return res.status(200).json(response.data);
   } catch (error) {
