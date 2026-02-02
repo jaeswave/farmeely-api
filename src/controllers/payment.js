@@ -1,9 +1,11 @@
 const { startPayment, completePayment } = require("../services/payment");
+const Transaction = require("../models/transaction");
 
 // Initialize payment
 const initializePayment = async (req, res) => {
   try {
     const { amount, email } = req.body;
+    const user_id = req.params.customer_id;
 
     if (!amount || !email) {
       return res.status(400).json({
@@ -42,6 +44,12 @@ const verifyPayment = async (req, res) => {
         message: "Payment verification failed",
         data: response.data,
       });
+    } else if (response.data.status === "success") {
+      // Update transaction status to completed
+      await Transaction.updateOne(
+        { reference: reference },
+        { $set: { transaction_status: "completed" } },
+      );
     }
 
     return res.status(200).json(response.data);
