@@ -20,6 +20,7 @@ const faqRoutes = require("./src/routes/faq");
 const walletRoutes = require("./src/routes/wallet");
 const transactionRoutes = require("./src/routes/transaction");
 const farmeelyRoute = require("./src/routes/farmeely");
+const paymentRoutes = require("./src/routes/payment");
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use("/api/v1/", faqRoutes);
 app.use("/api/v1/", walletRoutes);
 app.use("/api/v1/", transactionRoutes);
 app.use("/api/v1/", farmeelyRoute);
+app.use("/api/v1/payment", paymentRoutes);
 
 displayRoutes(app);
 //connect to database
