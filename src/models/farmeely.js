@@ -82,6 +82,7 @@ const FarmeelySchema = new mongoose.Schema({
       user_email: String,
       slots_joined: Number,
       amount_paid: Number,
+      is_paid: Boolean,
       joined_at: Date,
       is_creator: Boolean,
     },

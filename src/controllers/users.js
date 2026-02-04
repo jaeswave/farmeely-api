@@ -26,6 +26,7 @@ const register = async (req, res, next) => {
     email,
     phone_number,
     password,
+    who_referred_customer,
     signup_channel,
   } = req.body;
 

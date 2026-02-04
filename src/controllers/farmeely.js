@@ -99,6 +99,7 @@ const createFarmeely = async (req, res, next) => {
           user_email: user_email,
           slots_joined: creatorSlots,
           amount_paid: 0,
+          is_paided: false,
           joined_at: new Date(),
           is_creator: true,
         },
@@ -110,7 +111,7 @@ const createFarmeely = async (req, res, next) => {
     res.status(200).json({
       status: true,
       message: messages.slotCreated,
-      data: data,
+      data: farmeely_id,
     });
   } catch (err) {
     next(err);
@@ -128,11 +129,12 @@ const joinFarmeely = async (req, res, next) => {
   try {
     // 1. Find the active Farmeely slot for this product and location
     const [farmeelySlot] = await findQuery("Farmeely", {
-      product_id: Number(product_id), // Convert product_id to number
+      product_id: (product_id), // Convert product_id to number
       city: city,
       slot_status: "active",
       payment_status : "completed",
     });
+   
 
     if (!farmeelySlot) {
       const err = new Error(
@@ -194,6 +196,7 @@ const joinFarmeely = async (req, res, next) => {
             user_email: user_email,
             slots_joined: slotsToJoin,
             amount_paid: amountToPay,
+            is_paided: false,
             joined_at: new Date(),
             is_creator: false,
           },
