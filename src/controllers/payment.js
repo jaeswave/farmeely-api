@@ -6,6 +6,10 @@ const {
   updateMany,
   updateWithOperators,
 } = require("../repository");
+const {
+  MINIMUM_FARMEELY_PRICE,
+  ACTIVE_SLOT_STATUS,
+} = require("../enums/farmeely");
 // Initialize payment
 const initializePayment = async (req, res) => {
   try {
