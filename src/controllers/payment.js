@@ -38,14 +38,6 @@ const verifyPayment = async (req, res) => {
       });
     }
 
-    const response = await completePayment(reference);
-    if (response.data.status !== "success") {
-      return res.status(400).json({
-        message: "Payment verification failed",
-        data: response.data,
-      });
-    }
-
     return res.status(200).json(response.data);
   } catch (error) {
     return res.status(500).json({
