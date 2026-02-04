@@ -1,5 +1,4 @@
 const messages = {
-  noExistingUser: "Customer credentials doesn't exist, please sign up !",
   invalidLogin: "Invalid login credentials",
   cerdentialNotVerified: "Credentials have not been verified",
   loginSuccess: "Login successful",

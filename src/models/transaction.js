@@ -1,7 +1,15 @@
 const mongoose = require("mongoose");
 
 const transactionSchema = new mongoose.Schema(
+
+  
   {
+
+    farmeely_id: {
+      type: String,
+      // required: true,
+    },
+
     customer_id: {
       type: String,
       // required: true,

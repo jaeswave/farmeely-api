@@ -35,16 +35,11 @@ const register = async (req, res, next) => {
     });
 
     if (!isEmpty(checkIfUserExist)) {
-      const err = new Error(messages.userExists);
+      const err = new Error(messages.invalidLogin);
       err.status = 400;
       return next(err);
     }
 
-    if(checkIfUserExist.isOtpVerified === false){
-      const err = new Error("Please verify your email");
-      err.status = 400;
-      return next(err);
-    }
 
     const HashedPasswordAndSalt = await hashMyPassword(password);
     const customer_id = uuidv4();

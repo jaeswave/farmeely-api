@@ -1,6 +1,10 @@
 const mongoose = require("mongoose")
 
 const FarmeelySchema = new mongoose.Schema({
+  farmeely_id: {
+    type: String,
+    required: true,
+  },
   user_id: {
     type: String,
     required: true,
@@ -64,6 +68,12 @@ const FarmeelySchema = new mongoose.Schema({
   slot_status: {
     type: String,
     enum: ["active", "inactive"],
+    required: true,
+  },
+
+  payment_status: {
+    type: String,
+    enum: ["pending", "completed"],
     required: true,
   },
   joined_users: [

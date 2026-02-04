@@ -68,14 +68,12 @@ const createFarmeely = async (req, res, next) => {
     );
     const creatorAmount = pricePerSlot * creatorSlots;
 
-    const activeStatus =
-      availableSlots > 0
-        ? ACTIVE_SLOT_STATUS.active
-        : ACTIVE_SLOT_STATUS.inactive;
+    const activeStatus = ACTIVE_SLOT_STATUS.inactive;
 
     const slot_id = uuidv4();
 
     const slotValue = {
+      farmeely_id: uuidv4(),
       user_id: user_id,
       slot_id: slot_id,
       product_id: product_id,
@@ -92,13 +90,14 @@ const createFarmeely = async (req, res, next) => {
       product_image: product.product_image,
       product_description: product.description,
       slot_status: activeStatus,
+      payment_status: "pending",
       created_at: new Date(),
       joined_users: [
         {
           user_id: user_id,
           user_email: user_email,
           slots_joined: creatorSlots,
-          amount_paid: creatorAmount,
+          amount_paid: 0,
           joined_at: new Date(),
           is_creator: true,
         },
@@ -111,12 +110,13 @@ const createFarmeely = async (req, res, next) => {
       status: true,
       message: messages.slotCreated,
       data: {
-        farmeely_id: slot_id,
+        farmeely_id,
         product: product.product_name,
         expected_date: expected_date,
         address: address,
         city: city,
         creator_slots: creatorSlots,
+        amount: creatorAmount,
         slots_available: availableSlots,
         price_per_slot: pricePerSlot,
         total_amount_paid: creatorAmount,
@@ -142,6 +142,7 @@ const joinFarmeely = async (req, res, next) => {
       product_id: Number(product_id), // Convert product_id to number
       city: city,
       slot_status: "active",
+      payment_status : "completed",
     });
 
     if (!farmeelySlot) {

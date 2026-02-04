@@ -12,16 +12,11 @@ const login = async (req, res, next) => {
     const checkIfUserExist = await findQuery("Users", { email: email });
 
     if (isEmpty(checkIfUserExist)) {
-      const err = new Error(messages.noExistingUser);
+      const err = new Error(messages.invalidLogin);
       err.status = 400;
       return next(err);
     }
 
-    if(checkIfUserExist.isOtpVerified === false){
-      const err = new Error("Please verify your email");
-      err.status = 400;
-      return next(err);
-    }
 
     payload = checkIfUserExist[0];
     const comparePassword = await bcrypt.compare(

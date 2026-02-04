@@ -9,14 +9,22 @@ const {
 // Initialize payment
 const initializePayment = async (req, res) => {
   try {
-    const { amount, email } = req.body;
+    const { farmeely_id } = req.body;
     const user_id = req.params.customer_id;
+    const email = req.params.email;
 
-    if (!amount || !email) {
-      return res.status(400).json({
-        message: "Amount and email are required",
+    const [intent] = await findQuery("Farmeely", {
+      farmeely_id,
+      payment_status: "pending",
+    });
+
+    if (!intent) {
+      return res.status(404).json({
+        message: "Farmeely intent not found",
       });
     }
+
+    const amount = intent.creator_amount;
 
     const callback_url = `${process.env.APP_URL}/payment/callback`;
 
@@ -26,6 +34,7 @@ const initializePayment = async (req, res) => {
 
     // Record transaction in the database
     const transaction = await insertOne("Transaction", {
+      farmeely_id: farmeely_id,
       customer_id: user_id,
       amount: amount,
       reference: response.data.data.reference,
@@ -59,6 +68,17 @@ const verifyPayment = async (req, res) => {
     if (response.data.data.status !== "success") {
       throw new Error("Payment verification failed");
     }
+
+    await updateOne(
+      "Farmeely",
+      { farmeely_id },
+      {
+        $set: {
+          payment_status: "completed",
+          slot_status: ACTIVE_SLOT_STATUS.active,
+        },
+      },
+    );
 
     await updateOne(
       "Transaction",
