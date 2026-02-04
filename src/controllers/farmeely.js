@@ -71,9 +71,10 @@ const createFarmeely = async (req, res, next) => {
     const activeStatus = ACTIVE_SLOT_STATUS.inactive;
 
     const slot_id = uuidv4();
+    const farmeely_id = uuidv4();
 
     const slotValue = {
-      farmeely_id: uuidv4(),
+      farmeely_id: farmeely_id,
       user_id: user_id,
       slot_id: slot_id,
       product_id: product_id,
