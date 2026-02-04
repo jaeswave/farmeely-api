@@ -85,6 +85,10 @@ const verifyPayment = async (req, res) => {
         $set: {
           payment_status: "completed",
           slot_status: ACTIVE_SLOT_STATUS.active,
+          joined_users: {
+            user_id: user_id,
+            amount_paid: response.data.data.amount / 100, // Assuming amount is in kobo, convert to Naira
+          },
         },
       },
     );
