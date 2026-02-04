@@ -105,24 +105,12 @@ const createFarmeely = async (req, res, next) => {
       ],
     };
 
-    await insertOne("Farmeely", slotValue);
+    const data =await insertOne("Farmeely", slotValue);
 
     res.status(200).json({
       status: true,
       message: messages.slotCreated,
-      data: {
-        farmeely_id,
-        product: product.product_name,
-        expected_date: expected_date,
-        address: address,
-        city: city,
-        creator_slots: creatorSlots,
-        amount: creatorAmount,
-        slots_available: availableSlots,
-        price_per_slot: pricePerSlot,
-        total_amount_paid: creatorAmount,
-        next_step: `${availableSlots} slots available for others to join`,
-      },
+      data: data,
     });
   } catch (err) {
     next(err);

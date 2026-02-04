@@ -68,6 +68,11 @@ const verifyPayment = async (req, res) => {
     if (response.data.data.status !== "success") {
       throw new Error("Payment verification failed");
     }
+    const getfarmeely = await findQuery("Transaction", {
+      reference: reference,
+      customer_id: user_id,
+    });
+    const farmeely_id = getfarmeely[0].farmeely_id;
 
     await updateOne(
       "Farmeely",
