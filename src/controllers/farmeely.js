@@ -76,6 +76,7 @@ const createFarmeely = async (req, res, next) => {
     const slot_id = uuidv4();
 
     const slotValue = {
+      user_id: user_id,
       slot_id: slot_id,
       product_id: product_id,
       product_name: product.product_name,

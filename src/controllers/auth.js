@@ -9,31 +9,38 @@ const login = async (req, res, next) => {
   const { email, password } = req.body
 
   try {
-    const checkIfUserExist = await findQuery("Users", { email: email })
+    const checkIfUserExist = await findQuery("Users", { email: email });
 
     if (isEmpty(checkIfUserExist)) {
-      const err = new Error(messages.noExistingUser)
-      err.status = 400
-      return next(err)
+      const err = new Error(messages.noExistingUser);
+      err.status = 400;
+      return next(err);
     }
-    payload = checkIfUserExist[0]
+
+    if(checkIfUserExist.isOtpVerified === false){
+      const err = new Error("Please verify your email");
+      err.status = 400;
+      return next(err);
+    }
+
+    payload = checkIfUserExist[0];
     const comparePassword = await bcrypt.compare(
       password,
-      payload.password_hash
-    )
+      payload.password_hash,
+    );
 
     if (!comparePassword) {
-      const err = new Error(messages.invalidLogin)
-      err.status = 400
-      return next(err)
+      const err = new Error(messages.invalidLogin);
+      err.status = 400;
+      return next(err);
     }
 
-    const isCredentialsVerified = checkIfUserExist[0]?.isOtpVerified
+    const isCredentialsVerified = checkIfUserExist[0]?.isOtpVerified;
 
     if (!isCredentialsVerified) {
-      const err = new Error(messages.cerdentialNotVerified)
-      err.status = 401
-      return next(err)
+      const err = new Error(messages.cerdentialNotVerified);
+      err.status = 401;
+      return next(err);
     }
 
     const addedDataToPayload = {
@@ -42,7 +49,7 @@ const login = async (req, res, next) => {
       othernames: payload.othernames,
       email: payload.email,
       phone_number: payload.phone_number,
-    }
+    };
 
     jwt.sign(
       addedDataToPayload,
@@ -50,22 +57,22 @@ const login = async (req, res, next) => {
       { expiresIn: process.env.JWT_EXPIRES_TIME },
       (err, token) => {
         if (err) {
-          return next(err)
+          return next(err);
         } else {
-          delete payload.password_hash
-          delete payload.password_salt
-          delete payload.created_at
-          delete payload.modified_at
+          delete payload.password_hash;
+          delete payload.password_salt;
+          delete payload.created_at;
+          delete payload.modified_at;
 
-          res.set("Authorization", token)
+          res.set("Authorization", token);
           res.status(200).json({
             status: true,
             message: messages.loginSuccess,
             token: token,
-          })
+          });
         }
-      }
-    )
+      },
+    );
   } catch (err) {
     next(err)
   }

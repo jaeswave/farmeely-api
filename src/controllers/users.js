@@ -26,7 +26,6 @@ const register = async (req, res, next) => {
     email,
     phone_number,
     password,
-    who_referred_customer,
     signup_channel,
   } = req.body;
 
@@ -37,6 +36,12 @@ const register = async (req, res, next) => {
 
     if (!isEmpty(checkIfUserExist)) {
       const err = new Error(messages.userExists);
+      err.status = 400;
+      return next(err);
+    }
+
+    if(checkIfUserExist.isOtpVerified === false){
+      const err = new Error("Please verify your email");
       err.status = 400;
       return next(err);
     }
@@ -263,7 +268,7 @@ const completeForgetPassword = async (req, res, next) => {
 
     await updateOne(
       "Users",
-      { email },
+      { email: email },
       {
         $set: {
           password_salt: newPasswordHashAndSalt[0],
@@ -271,15 +276,6 @@ const completeForgetPassword = async (req, res, next) => {
         },
       },
     );
-
-    // await updateMany(
-    //   "Users",
-    //   { email: email },
-    //   {
-    //     password_salt: newPasswordHashAndSalt[0],
-    //     password_hash: newPasswordHashAndSalt[1],
-    //   },
-    // );
 
     redisClient.del(`otp_${email}`);
 
