@@ -2,20 +2,10 @@ const mongoose = require("mongoose");
 
 const transactionSchema = new mongoose.Schema(
   {
-    transaction_id: {
-      type: String,
-      unique: true,
-      required: true,
-    },
-
     customer_id: {
       type: String,
-    },
-
-    transaction_type: {
-      type: String,
-      enum: ["credit", "debit"],
-      required: true,
+      // required: true,
+      // unique: true,
     },
 
     amount: {
@@ -23,13 +13,11 @@ const transactionSchema = new mongoose.Schema(
       required: true,
     },
 
-    description: {
-      type: String,
-    },
-
     reference: {
       type: String,
+      required: true,
     },
+
 
     transaction_status: {
       type: String,

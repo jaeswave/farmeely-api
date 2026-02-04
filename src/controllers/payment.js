@@ -1,6 +1,11 @@
 const { startPayment, completePayment } = require("../services/payment");
-const Transaction = require("../models/transaction");
-
+const {
+  findQuery,
+  insertOne,
+  updateOne,
+  updateMany,
+  updateWithOperators,
+} = require("../repository");
 // Initialize payment
 const initializePayment = async (req, res) => {
   try {
@@ -16,6 +21,16 @@ const initializePayment = async (req, res) => {
     const callback_url = `${process.env.APP_URL}/payment/callback`;
 
     const response = await startPayment(amount, email, callback_url);
+
+    console.log("response", response.data.data);
+
+    // Record transaction in the database
+    const transaction = await insertOne("Transaction", {
+      customer_id: user_id,
+      amount: amount,
+      reference: response.data.data.reference,
+      transaction_status: "pending",
+    });
 
     return res.status(200).json(response.data);
   } catch (error) {
@@ -37,6 +52,19 @@ const verifyPayment = async (req, res) => {
         message: "Transaction reference is required",
       });
     }
+
+    const response = await completePayment(reference);
+    console.log("response", response.data.data);
+
+    if (response.data.data.status !== "success") {
+      throw new Error("Payment verification failed");
+    }
+
+    await updateOne(
+      "Transaction",
+      { reference: reference },
+      { $set: { transaction_status: "completed" } },
+    );
 
     return res.status(200).json(response.data);
   } catch (error) {
