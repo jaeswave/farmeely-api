@@ -252,7 +252,7 @@ const getSingleFarmeely = async (req, res, next) => {
 
 const getAllFarmeely = async (req, res, next) => {
   try {
-    const farmeelySlots = await findQuery("Farmeely", {});
+    const farmeelySlots = await findQuery("Farmeely");
 
     res.status(200).json({
       status: true,
