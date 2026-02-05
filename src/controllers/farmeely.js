@@ -99,14 +99,14 @@ const createFarmeely = async (req, res, next) => {
           user_email: user_email,
           slots_joined: creatorSlots,
           amount_paid: 0,
-          is_paided: false,
+          is_paid: false,
           joined_at: new Date(),
           is_creator: true,
         },
       ],
     };
 
-    const data =await insertOne("Farmeely", slotValue);
+    const data = await insertOne("Farmeely", slotValue);
 
     res.status(200).json({
       status: true,
@@ -209,7 +209,7 @@ const joinFarmeely = async (req, res, next) => {
       status: true,
       message: "Successfully joined Farmeely",
       data: {
-        farmeely_id: farmeelySlot.slot_id,
+        farmeely_id: farmeelySlot.farmeely_id,
         product: farmeelySlot.product_name,
         address: address,
         city: city,
