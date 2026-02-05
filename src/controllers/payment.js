@@ -87,7 +87,6 @@ const verifyPayment = async (req, res) => {
           slot_status: ACTIVE_SLOT_STATUS.active,
           "joined_users.$.amount_paid": response.data.data.amount / 100,
           "joined_users.$.is_paid": true,
-          
         },
       },
     );
@@ -118,13 +117,17 @@ const joinInitializePayment = async (req, res) => {
       payment_status: "completed",
     });
 
+    console.log("intent", intent);
+
     if (!intent) {
       return res.status(404).json({
         message: "Farmeely intent not found",
       });
     }
 
-    const amount = intent.joined_users.find((user => user.user_id === user_id)).amount_paid;
+    const amount = intent.joined_users.find(
+      (user) => user.user_id === user_id,
+    ).amount_paid;
 
     const callback_url = `${process.env.APP_URL}/payment/callback`;
 
