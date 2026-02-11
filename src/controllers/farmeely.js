@@ -301,7 +301,8 @@ const addMoreSlots = async (req, res, next) => {
     }
 
     const slotsToAdd = Number(additional_slots);
-    console.log("Slots to add:",typeof(slotsToAdd) , slotsToAdd);
+    console.log("Type of additional_slots:", typeof additional_slots);
+    console.log("Slots to add:", typeof slotsToAdd, slotsToAdd);
 
     if (slotsToAdd <= 0) {
       return res.status(400).json({
@@ -317,7 +318,7 @@ const addMoreSlots = async (req, res, next) => {
     }
 
     const extraAmount = slotsToAdd * Number(farmeely.price_per_slot);
-    console.log("Extra amount to pay:",typeof(extraAmount) , extraAmount);
+    console.log("Extra amount to pay:", typeof extraAmount, extraAmount);
 
     // Reserve slots temporarily by marking them as pending
     // DO NOT mark is_paid as false - user is still paid for existing slots
@@ -325,12 +326,9 @@ const addMoreSlots = async (req, res, next) => {
       "Farmeely",
       { farmeely_id, "joined_users.user_id": user_id },
       {
-        $inc: {
+        $set: {
           "joined_users.$.pending_additional_slots": slotsToAdd,
           "joined_users.$.pending_additional_amount": extraAmount,
-        },
-        // Keep is_paid as true for existing slots
-        $set: {
           "joined_users.$.has_pending_addition": true,
         },
       },

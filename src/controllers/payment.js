@@ -281,7 +281,7 @@ const handleCreatePayment = async (farmeely, user, transaction) => {
   );
 
   console.log(
-    `Creator payment processed: ${pendingSlots} slots, $${pendingAmount}`,
+    `Creator payment processed: ${pendingSlots} slots, ${pendingAmount}`,
   );
 };
 
