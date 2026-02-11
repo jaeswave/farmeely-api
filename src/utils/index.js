@@ -66,10 +66,7 @@ const generateOTP = () => {
 };
 
 const generateReferralCode = () => {
-  /* todo:
-     *
-        to work on this later
-    */
+  return Math.random().toString(36).substring(2, 10).toUpperCase();
 };
 
 const generateChecksum = (
@@ -78,7 +75,7 @@ const generateChecksum = (
   accountingCurrencyAmount,
   status,
   rkey,
-  key
+  key,
 ) => {
   const str = `${transId}|${sellingCurrencyAmount}|${accountingCurrencyAmount}|${status}|${rkey}|${key}`;
   const generatedCheckSum = crypto.createHash("md5").update(str).digest("hex");
@@ -97,7 +94,7 @@ const verifyChecksum = (
   sellingCurrencyAmount,
   accountingCurrencyAmount,
   key,
-  checksum
+  checksum,
 ) => {
   const str = `${paymentTypeId}|${transId}|${userId}|${userType}|${transactionType}|${invoiceIds}|${debitNoteIds}|${description}|${sellingCurrencyAmount}|${accountingCurrencyAmount}|${key}`;
   const generatedCheckSum = crypto.createHash("md5").update(str).digest("hex");
