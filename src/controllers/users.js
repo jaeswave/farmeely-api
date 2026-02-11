@@ -31,6 +31,7 @@ const register = async (req, res, next) => {
   } = req.body;
 
   try {
+    console.log("Registering user with email:", findQuery);
     const [checkIfUserExist] = await findQuery("Users", {
       $or: [{ email: email }, { phone_number: phone_number }],
     });
@@ -40,7 +41,6 @@ const register = async (req, res, next) => {
       err.status = 400;
       return next(err);
     }
-
 
     const HashedPasswordAndSalt = await hashMyPassword(password);
     const customer_id = uuidv4();
