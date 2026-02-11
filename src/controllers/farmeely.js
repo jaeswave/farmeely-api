@@ -300,7 +300,7 @@ const addMoreSlots = async (req, res, next) => {
       });
     }
 
-    const slotsToAdd = parseInt(additional_slots);
+    const slotsToAdd = Number(additional_slots);
     console.log("Slots to add:",typeof(slotsToAdd) , slotsToAdd);
 
     if (slotsToAdd <= 0) {
@@ -316,7 +316,7 @@ const addMoreSlots = async (req, res, next) => {
       });
     }
 
-    const extraAmount = slotsToAdd * farmeely.price_per_slot;
+    const extraAmount = slotsToAdd * Number(farmeely.price_per_slot);
     console.log("Extra amount to pay:",typeof(extraAmount) , extraAmount);
 
     // Reserve slots temporarily by marking them as pending
