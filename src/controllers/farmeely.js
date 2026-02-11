@@ -258,6 +258,7 @@ const addMoreSlots = async (req, res, next) => {
   const { farmeely_id } = req.params;
   const { additional_slots } = req.body;
   const user_id = req.params.customer_id;
+  console.log("addMore SLots", additional_slots, typeof additional_slots)
 
   try {
     const [farmeely] = await findQuery("Farmeely", { farmeely_id });
@@ -291,8 +292,8 @@ const addMoreSlots = async (req, res, next) => {
 
     // Check if user already has pending additional slots
     if (
-      user.pending_additional_slots > 0 ||
-      user.pending_additional_amount > 0
+      (user.pending_additional_slots || 0) > 0 ||
+      (user.pending_additional_amount || 0) > 0
     ) {
       return res.status(400).json({
         message:
