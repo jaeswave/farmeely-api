@@ -187,8 +187,6 @@ const createFarmeely = async (req, res, next) => {
   }
 };
 
-
-
 const joinFarmeely = async (req, res, next) => {
   const { product_id } = req.params;
   const { city, number_of_slot } = req.body;
@@ -207,19 +205,17 @@ const joinFarmeely = async (req, res, next) => {
     if (!farmeely) {
       return res.status(404).json({ message: "No active Farmeely found" });
     }
-
-    const slotsToJoin = parseInt(number_of_slot);
-
-    if (slotsToJoin <= 0 || slotsToJoin > farmeely.slots_available) {
-      return res.status(400).json({ message: "Invalid slot amount" });
-    }
-
     const alreadyJoined = farmeely.joined_users.some(
       (u) => u.user_id === user_id,
     );
 
     if (alreadyJoined) {
       return res.status(400).json({ message: "Already joined" });
+    }
+    const slotsToJoin = parseInt(number_of_slot);
+
+    if (slotsToJoin <= 0 || slotsToJoin > farmeely.slots_available) {
+      return res.status(400).json({ message: "Invalid slot amount" });
     }
 
     const amountToPay = slotsToJoin * farmeely.price_per_slot;
@@ -257,8 +253,6 @@ const joinFarmeely = async (req, res, next) => {
     next(err);
   }
 };
-
-
 
 const addMoreSlots = async (req, res, next) => {
   const { farmeely_id } = req.params;
@@ -307,6 +301,7 @@ const addMoreSlots = async (req, res, next) => {
     }
 
     const slotsToAdd = parseInt(additional_slots);
+    console.log("Slots to add:",typeof(slotsToAdd) , slotsToAdd);
 
     if (slotsToAdd <= 0) {
       return res.status(400).json({
@@ -322,6 +317,7 @@ const addMoreSlots = async (req, res, next) => {
     }
 
     const extraAmount = slotsToAdd * farmeely.price_per_slot;
+    console.log("Extra amount to pay:",typeof(extraAmount) , extraAmount);
 
     // Reserve slots temporarily by marking them as pending
     // DO NOT mark is_paid as false - user is still paid for existing slots
@@ -359,7 +355,6 @@ const addMoreSlots = async (req, res, next) => {
     next(err);
   }
 };
-
 
 const getSingleFarmeely = async (req, res, next) => {
   const { slot_id } = req.params;
