@@ -31,10 +31,11 @@ const register = async (req, res, next) => {
   } = req.body;
 
   try {
-    console.log("Registering user with email:", findQuery);
     const [checkIfUserExist] = await findQuery("Users", {
       $or: [{ email: email }, { phone_number: phone_number }],
     });
+
+    console.log("hello",checkIfUserExist);
 
     if (!isEmpty(checkIfUserExist)) {
       const err = new Error(messages.invalidLogin);
@@ -56,6 +57,9 @@ const register = async (req, res, next) => {
       who_referred_customer: who_referred_customer || null,
       signup_channel: signup_channel || "App",
       isOtpVerified: IS_EMAIL_VERIFIED.default,
+      preferences: [], // 👈 empty by default
+      city: null, // 👈 important for notification
+      fcmToken: null,
     });
 
     if (isEmpty(createCustomer)) {
@@ -529,6 +533,54 @@ const deleteAddress = async (req, res, next) => {
   }
 };
 
+const savePreferences = async (req, res, next) => {
+  const { customer_id } = req.params;
+  const { preferences } = req.body;
+
+  try {
+    if (!preferences || preferences.length === 0) {
+      return res.status(400).json({
+        status: false,
+        message: "Please select at least one preference",
+      });
+    }
+
+    await updateOne(
+      "Users",
+      { customer_id },
+      {
+        $set: {
+          preferences: preferences,
+        },
+      },
+    );
+
+    return res.status(200).json({
+      status: true,
+      message: "Preferences saved successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getAvailablePreferences = async (req, res) => {
+  const preferencesList = [
+    "Livestock",
+    "Poultry",
+    "Goats",
+    "Grains",
+    "Vegetables",
+    "Dairy",
+    "Fish",
+  ];
+
+  return res.status(200).json({
+    status: true,
+    data: preferencesList,
+  });
+};
+
 module.exports = {
   register,
   resendOTP,
@@ -541,4 +593,6 @@ module.exports = {
   addAddress,
   getAddresses,
   deleteAddress,
+  savePreferences,
+  getAvailablePreferences,
 };

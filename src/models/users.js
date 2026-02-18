@@ -1,4 +1,4 @@
-const { string } = require("joi");
+const { string, preferences } = require("joi");
 const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema({
@@ -42,7 +42,7 @@ const UserSchema = new mongoose.Schema({
       city: {
         type: String,
         required: true,
-      }
+      },
     },
   ],
 
@@ -61,6 +61,18 @@ const UserSchema = new mongoose.Schema({
     required: false,
   },
   password_salt: {
+    type: String,
+    required: false,
+  },
+
+  preferences: [
+    {
+      type: String,
+      required: false,
+    },
+  ],
+
+  fcmToken: {
     type: String,
     required: false,
   },

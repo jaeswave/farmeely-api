@@ -16,6 +16,8 @@ const {
   addAddress,
   getAddresses,
   deleteAddress,
+  savePreferences,
+  getAvailablePreferences,
 } = require("../controllers/users");
 const { login } = require("../controllers/auth");
 
@@ -57,5 +59,7 @@ router.get("/user/get-profile", authorization, getUserProfile);
 router.post("/addresses", authorization, addAddress);
 router.get("/addresses", authorization, getAddresses);
 router.delete("/addresses", authorization, deleteAddress);
+router.post("/preferences", authorization, savePreferences);
+router.get("/preferences", authorization, getAvailablePreferences);
 
 module.exports = router;

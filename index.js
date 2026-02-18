@@ -52,7 +52,15 @@ displayRoutes(app);
 // });
 
 app.listen(port, () => {
-  db.connect();
+  //if db is not connect then dont listen and also check for erro
+  db.connect((err) => {
+    if (err) {
+      console.error("❌ Database connection error:", err);
+      process.exit(1);
+    } else {
+      console.log("✅ Database connected successfully");
+    }
+  });
   // connect to redis
   redisClient.on("error", (err) => {
     console.error("❌ Redis connection error:", err);
