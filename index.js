@@ -21,6 +21,7 @@ const walletRoutes = require("./src/routes/wallet");
 const transactionRoutes = require("./src/routes/transaction");
 const farmeelyRoute = require("./src/routes/farmeely");
 const paymentRoutes = require("./src/routes/payment");
+const expatriateRoutes = require("./src/routes/Expatriate");
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use("/api/v1/", walletRoutes);
 app.use("/api/v1/", transactionRoutes);
 app.use("/api/v1/", farmeelyRoute);
 app.use("/api/v1/payment", paymentRoutes);
+app.use("/api/v1/", expatriateRoutes);
 
 displayRoutes(app);
 //connect to database
