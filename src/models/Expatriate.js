@@ -19,7 +19,6 @@ const expatriateSchema = new mongoose.Schema({
     },
   ],
 
-  currency: "NGN",
 
   subtotal: Number, // calculated after quote
   shipping_fee: Number, // admin sets
