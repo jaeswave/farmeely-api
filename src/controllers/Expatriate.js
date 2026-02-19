@@ -18,8 +18,7 @@ const submitCustomRequest = async (req, res, next) => {
       preferred_delivery_date,
     } = req.body;
 
-    const user_id = req.user.id;
-    const user_email = req.user.email;
+    const user_id = req.params.customer_id;
 
     if (!items || items.length === 0) {
       return res.status(400).json({
@@ -32,7 +31,6 @@ const submitCustomRequest = async (req, res, next) => {
     await insertOne("Expatriate", {
       request_id,
       customer_id: user_id,
-      customer_email: user_email,
       items: items.map((item) => ({
         item_name: item.item_name,
         quantity: item.quantity,

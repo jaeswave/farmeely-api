@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { submitCustomRequest } = require("../controllers/Expatriate");
-const  authorization  = require("../middleware/authorization");
+const authorization = require("../middleware/authorization");
 
 // Expatriate Group Routes
 
