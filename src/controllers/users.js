@@ -18,6 +18,8 @@ const { readFileAndSendEmail } = require("../services/email");
 const { createWallet } = require("./wallet");
 const { IS_EMAIL_VERIFIED } = require("../enums/users");
 const { messages } = require("../constants/messages");
+const { sendNotificationToUser } = require("../services/push");
+
 
 const register = async (req, res, next) => {
   const {
@@ -581,6 +583,77 @@ const getAvailablePreferences = async (req, res) => {
   });
 };
 
+const registerPushToken = async (req, res, next) => {
+  const { customer_id } = req.params;
+  const { token } = req.body;
+
+  try {
+    if (!token) {
+      return res.status(400).json({
+        status: false,
+        message: "Push token is required",
+      });
+    }
+
+    const [user] = await findQuery("Users", { customer_id });
+
+    if (isEmpty(user)) {
+      const err = new Error("Access Denied!");
+      err.status = 400;
+      return next(err);
+    }
+
+    const existingTokens = user.fcmTokens || [];
+
+    // Avoid duplicates
+    if (!existingTokens.includes(token)) {
+      await updateOne(
+        "Users",
+        { customer_id },
+        { $push: { fcmTokens: token } },
+      );
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "Push token registered successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+const sendPushNotification = async (req, res, next) => {
+  const { customer_id } = req.params;
+  const { title, body } = req.body;
+
+  if (!title || !body) {
+    return res.status(400).json({
+      status: false,
+      message: "Title and body are required",
+    });
+  }
+
+  try {
+    await sendNotificationToUser(customer_id, title, body);
+
+    res.status(200).json({
+      status: true,
+      message: "Notification triggered successfully",
+    });
+  } catch (err) {
+    console.error(err);
+    next(err);
+  }
+};
+
+module.exports = {
+  ...module.exports,
+  sendPushNotification,
+};
+
 module.exports = {
   register,
   resendOTP,
@@ -595,4 +668,6 @@ module.exports = {
   deleteAddress,
   savePreferences,
   getAvailablePreferences,
+  registerPushToken,
+  sendPushNotification
 };

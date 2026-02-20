@@ -17,6 +17,8 @@ const {
   getAddresses,
   deleteAddress,
   savePreferences,
+  registerPushToken,
+  sendPushNotification,
   getAvailablePreferences,
 } = require("../controllers/users");
 const { login } = require("../controllers/auth");
@@ -61,5 +63,7 @@ router.get("/addresses", authorization, getAddresses);
 router.delete("/addresses", authorization, deleteAddress);
 router.post("/preferences", authorization, savePreferences);
 router.get("/preferences", authorization, getAvailablePreferences);
+router.post("/register-push-token", authorization, registerPushToken);
+router.post("/send-push-notification", authorization, sendPushNotification);
 
 module.exports = router;

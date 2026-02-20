@@ -22,8 +22,10 @@ const transactionRoutes = require("./src/routes/transaction");
 const farmeelyRoute = require("./src/routes/farmeely");
 const paymentRoutes = require("./src/routes/payment");
 const expatriateRoutes = require("./src/routes/Expatriate");
+const admn = require("./src/firebase")
 
 const app = express();
+app.use(bodyParser.json());
 
 // Use Helmet!
 app.use(helmet()); // set security HTTP headers
