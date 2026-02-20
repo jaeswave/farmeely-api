@@ -258,7 +258,7 @@ const addMoreSlots = async (req, res, next) => {
   const { farmeely_id } = req.params;
   const { additional_slots } = req.body;
   const user_id = req.params.customer_id;
-  console.log("addMore SLots", additional_slots, typeof additional_slots)
+  console.log("addMore SLots", additional_slots, typeof additional_slots);
 
   try {
     const [farmeely] = await findQuery("Farmeely", { farmeely_id });
@@ -393,10 +393,30 @@ const getAllFarmeely = async (req, res, next) => {
   }
 };
 
+//get all farmeely of a user
+const getFarmeelyOfUser = async (req, res, next) => {
+  const user_id = req.params.customer_id;
+
+  try {
+    const farmeelySlots = await findQuery("Farmeely", {
+      "joined_users.user_id": user_id,
+    });
+
+    res.status(200).json({
+      status: true,
+      message: "Successfully fetched Farmeely",
+      data: farmeelySlots,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   createFarmeely,
   joinFarmeely,
   addMoreSlots,
   getSingleFarmeely,
   getAllFarmeely,
+  getFarmeelyOfUser,
 };

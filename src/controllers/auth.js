@@ -1,12 +1,12 @@
-const { findQuery } = require("../repository")
-const jwt = require("jsonwebtoken")
-const bcrypt = require("bcrypt")
-const { isEmpty } = require("../utils")
-const { messages } = require("../constants/messages")
+const { findQuery } = require("../repository");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const { isEmpty } = require("../utils");
+const { messages } = require("../constants/messages");
 
 const login = async (req, res, next) => {
-  let payload
-  const { email, password } = req.body
+  let payload;
+  const { email, password } = req.body;
 
   try {
     const checkIfUserExist = await findQuery("Users", { email: email });
@@ -16,7 +16,6 @@ const login = async (req, res, next) => {
       err.status = 400;
       return next(err);
     }
-
 
     payload = checkIfUserExist[0];
     const comparePassword = await bcrypt.compare(
@@ -69,10 +68,10 @@ const login = async (req, res, next) => {
       },
     );
   } catch (err) {
-    next(err)
+    next(err);
   }
-}
+};
 
 module.exports = {
   login,
-}
+};

@@ -65,6 +65,26 @@ const submitCustomRequest = async (req, res, next) => {
   }
 };
 
+
+const getExpatriate = async (req, res, next) => {
+  try {
+    const user_id = req.params.customer_id;
+
+    const expatriate = await findQuery("Expatriate", {
+      customer_id: user_id,
+    });
+
+    res.status(200).json({
+      status: true,
+      message: "Expatriate retrieved successfully",
+      data: expatriate,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   submitCustomRequest,
+  getExpatriate
 };

@@ -20,7 +20,6 @@ const { IS_EMAIL_VERIFIED } = require("../enums/users");
 const { messages } = require("../constants/messages");
 const { sendNotificationToUser } = require("../services/push");
 
-
 const register = async (req, res, next) => {
   const {
     lastname,
@@ -37,10 +36,8 @@ const register = async (req, res, next) => {
       $or: [{ email: email }, { phone_number: phone_number }],
     });
 
-    console.log("hello",checkIfUserExist);
-
     if (!isEmpty(checkIfUserExist)) {
-      const err = new Error(messages.invalidLogin);
+      const err = new Error("User already exist....Please log in");
       err.status = 400;
       return next(err);
     }
@@ -623,8 +620,6 @@ const registerPushToken = async (req, res, next) => {
   }
 };
 
-
-
 const sendPushNotification = async (req, res, next) => {
   const { customer_id } = req.params;
   const { title, body } = req.body;
@@ -669,5 +664,5 @@ module.exports = {
   savePreferences,
   getAvailablePreferences,
   registerPushToken,
-  sendPushNotification
+  sendPushNotification,
 };
