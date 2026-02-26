@@ -332,12 +332,16 @@ const getFarmeelyOfUser = async (req, res, next) => {
 
 const getFeaturedFarmeelyByCity = async (req, res, next) => {
   try {
-    const user_id = req.params.customer_id;
+    const { customer_id } = req.params;
+
+    const [userDetails] = await findQuery("Users", {
+      customer_id: customer_id,
+    });
 
     // 1️⃣ Get user's city
     const user = await findQuery(
       "Users",
-      { user_id },
+      { user_id: userDetails.user_id },
       { projection: { city: 1 } },
     );
 
