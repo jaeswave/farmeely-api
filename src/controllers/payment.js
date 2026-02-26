@@ -9,6 +9,7 @@ const {
 const {
   MINIMUM_FARMEELY_PRICE,
   ACTIVE_SLOT_STATUS,
+    FARMEELY_STATUS,
 } = require("../enums/farmeely");
 
 // Unified payment initialization
@@ -261,6 +262,7 @@ const handleCreatePayment = async (farmeely, user, transaction) => {
   const updateOperations = {
     $inc: {
       slots_available: -pendingSlots,
+      farmeely_status: FARMEELY_STATUS.inProgress,
       "joined_users.$.slots_joined": pendingSlots,
       "joined_users.$.amount_paid": pendingAmount,
     },

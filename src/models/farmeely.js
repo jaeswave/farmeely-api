@@ -1,4 +1,4 @@
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
 
 const FarmeelySchema = new mongoose.Schema({
   farmeely_id: {
@@ -7,6 +7,12 @@ const FarmeelySchema = new mongoose.Schema({
   },
   user_id: {
     type: String,
+    required: true,
+  },
+  farmeely_status: {
+    type: String,
+    enum: ["in_progress", "group_completed","processing", "completed"],
+    default: null,
     required: true,
   },
   slot_id: {
@@ -92,4 +98,4 @@ const FarmeelySchema = new mongoose.Schema({
 
 const Farmeely = mongoose.model("Farmeely", FarmeelySchema);
 
-module.exports = {Farmeely};
+module.exports = { Farmeely };

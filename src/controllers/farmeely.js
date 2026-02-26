@@ -11,112 +11,8 @@ const { ObjectId } = require("mongodb");
 const {
   MINIMUM_FARMEELY_PRICE,
   ACTIVE_SLOT_STATUS,
+  FARMEELY_STATUS,
 } = require("../enums/farmeely");
-
-// const createFarmeely = async (req, res, next) => {
-//   const { product_id } = req.params;
-//   const { address, city, number_of_slot, expected_date } = req.body;
-
-//   // ✅ Access user data from req.params
-//   const user_id = req.params.customer_id;
-//   const user_email = req.params.email;
-
-//   try {
-//     // Find the product
-//     const [product] = await findQuery("Products", {
-//       product_id: Number(product_id),
-//     });
-
-//     // Check if there's already an active Farmeely in this location
-//     const [existingFarmeely] = await findQuery("Farmeely", {
-//       product_id,
-//       city: city,
-//       slot_status: "active",
-//     });
-
-//     if (existingFarmeely) {
-//       const err = new Error(
-//         "An active Farmeely already exists in this location",
-//       );
-//       err.status = 400;
-//       return next(err);
-//     }
-
-//     // Use product.total_slots from the product data
-//     const totalSlots = product.total_slots;
-//     const creatorSlots = parseInt(number_of_slot);
-//     const availableSlots = totalSlots - creatorSlots;
-
-//     // Validate slot selection
-//     if (creatorSlots > totalSlots) {
-//       const err = new Error(
-//         `This ${product.product_name} allows maximum ${totalSlots} slots`,
-//       );
-//       err.status = 400;
-//       return next(err);
-//     }
-
-//     if (creatorSlots <= 0) {
-//       const err = new Error("You must take at least 1 slot");
-//       err.status = 400;
-//       return next(err);
-//     }
-
-//     // Calculate price per slot
-//     const pricePerSlot = Math.ceil(
-//       parseInt(product.product_price) / totalSlots,
-//     );
-//     const creatorAmount = pricePerSlot * creatorSlots;
-
-//     const activeStatus = ACTIVE_SLOT_STATUS.inactive;
-
-//     const slot_id = uuidv4();
-//     const farmeely_id = uuidv4();
-
-//     const slotValue = {
-//       farmeely_id: farmeely_id,
-//       user_id: user_id,
-//       slot_id: slot_id,
-//       product_id: product_id,
-//       product_name: product.product_name,
-//       expected_date: expected_date,
-//       address: address,
-//       city: city,
-//       total_slots: totalSlots,
-//       creator_slots_taken: creatorSlots,
-//       slots_available: availableSlots,
-//       price_per_slot: pricePerSlot,
-//       creator_amount: creatorAmount,
-//       total_product_price: product.product_price,
-//       product_image: product.product_image,
-//       product_description: product.description,
-//       slot_status: activeStatus,
-//       payment_status: "pending",
-//       created_at: new Date(),
-//       joined_users: [
-//         {
-//           user_id: user_id,
-//           user_email: user_email,
-//           slots_joined: creatorSlots,
-//           amount_paid: 0,
-//           is_paid: false,
-//           joined_at: new Date(),
-//           is_creator: true,
-//         },
-//       ],
-//     };
-
-//     const data = await insertOne("Farmeely", slotValue);
-
-//     res.status(200).json({
-//       status: true,
-//       message: messages.slotCreated,
-//       data: farmeely_id,
-//     });
-//   } catch (err) {
-//     next(err);
-//   }
-// };
 
 const createFarmeely = async (req, res, next) => {
   const { product_id } = req.params;
@@ -200,11 +96,33 @@ const joinFarmeely = async (req, res, next) => {
       city,
       payment_status: "completed",
       slot_status: ACTIVE_SLOT_STATUS.active,
+      farmeely_status: FARMEELY_STATUS.inProgress,
     });
 
     if (!farmeely) {
-      return res.status(404).json({ message: "No active Farmeely found" });
+      return res
+        .status(404)
+        .json({ message: "This farmeely group is completed or not available" });
     }
+
+    //check if stotal_slot and the and the joined user array.slot_joined is the same
+    const totalSlots = farmeely.total_slots;
+    const totalSlotsJoined = farmeely.joined_users.reduce(
+      (sum, user) => sum + user.slots_joined,
+      0,
+    );
+
+    if (totalSlots === totalSlotsJoined) {
+      await updateOne(
+        "Farmeely",
+        { farmeely_id: farmeely.farmeely_id },
+        { $set: { farmeely_status: FARMEELY_STATUS.groupCompleted } },
+      );
+      return res.status(400).json({
+        message: "All slots in this farmeely are already joined",
+      });
+    }
+
     const alreadyJoined = farmeely.joined_users.some(
       (u) => u.user_id === user_id,
     );

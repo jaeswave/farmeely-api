@@ -645,11 +645,6 @@ const sendPushNotification = async (req, res, next) => {
 };
 
 module.exports = {
-  ...module.exports,
-  sendPushNotification,
-};
-
-module.exports = {
   register,
   resendOTP,
   verifyOtp,
