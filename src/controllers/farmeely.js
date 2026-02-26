@@ -336,7 +336,6 @@ const getFeaturedFarmeelyByCity = async (req, res, next) => {
 
     const [userDetails] = await findQuery("Users", {
       customer_id: user_id,
-      projection: { city: 1 },
     });
 
     if (!userDetails || userDetails.length === 0) {
@@ -344,29 +343,29 @@ const getFeaturedFarmeelyByCity = async (req, res, next) => {
     }
 
     // 1️⃣ Get user's city
+    const userCities = userDetails.address.map((a) => a.city);
 
-    const userCity = userDetails[0].city;
-
-    // 2️⃣ Get Farmeely in same city
-    const sameCityFarmeely = await findQuery("Farmeely", {
-      city: userCity,
+    const allFarmeely = await findQuery("Farmeely", {
       slot_status: "active",
-      farmeely_status: { $in: ["in_progress", "processing"] },
+      farmeely_status: FARMEELY_STATUS.inProgress,
     });
 
-    // 3️⃣ Get Farmeely in other cities
-    const otherCityFarmeely = await findQuery("Farmeely", {
-      city: { $ne: userCity },
-      slot_status: "active",
-      farmeely_status: { $in: ["in_progress", "processing"] },
+    const sameCity = [];
+    const otherCities = [];
+
+    allFarmeely.forEach((farmeely) => {
+      if (userCities.includes(farmeely.city)) {
+        sameCity.push(farmeely);
+      } else {
+        otherCities.push(farmeely);
+      }
     });
 
-    // 4️⃣ Return response
     return res.status(200).json({
       success: true,
       data: {
-        sameCity: sameCityFarmeely,
-        otherCities: otherCityFarmeely,
+        sameCity: sameCity,
+        otherCities: otherCities,
       },
     });
   } catch (error) {
