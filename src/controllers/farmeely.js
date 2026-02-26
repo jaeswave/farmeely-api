@@ -336,20 +336,16 @@ const getFeaturedFarmeelyByCity = async (req, res, next) => {
 
     const [userDetails] = await findQuery("Users", {
       customer_id: customer_id,
+      projection: { city: 1 },
     });
 
-    // 1️⃣ Get user's city
-    const user = await findQuery(
-      "Users",
-      { user_id: userDetails.user_id },
-      { projection: { city: 1 } },
-    );
-
-    if (!user || user.length === 0) {
+    if (!userDetails || userDetails.length === 0) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const userCity = user[0].city;
+    // 1️⃣ Get user's city
+
+    const userCity = userDetails[0].city;
 
     // 2️⃣ Get Farmeely in same city
     const sameCityFarmeely = await findQuery("Farmeely", {
