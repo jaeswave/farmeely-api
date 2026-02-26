@@ -330,6 +330,50 @@ const getFarmeelyOfUser = async (req, res, next) => {
   }
 };
 
+const getFeaturedFarmeelyByCity = async (req, res, next) => {
+  try {
+    const user_id = req.params.customer_id;
+
+    // 1️⃣ Get user's city
+    const user = await findQuery(
+      "Users",
+      { user_id },
+      { projection: { city: 1 } },
+    );
+
+    if (!user || user.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const userCity = user[0].city;
+
+    // 2️⃣ Get Farmeely in same city
+    const sameCityFarmeely = await findQuery("Farmeely", {
+      city: userCity,
+      slot_status: "active",
+      farmeely_status: { $in: ["in_progress", "processing"] },
+    });
+
+    // 3️⃣ Get Farmeely in other cities
+    const otherCityFarmeely = await findQuery("Farmeely", {
+      city: { $ne: userCity },
+      slot_status: "active",
+      farmeely_status: { $in: ["in_progress", "processing"] },
+    });
+
+    // 4️⃣ Return response
+    return res.status(200).json({
+      success: true,
+      data: {
+        sameCity: sameCityFarmeely,
+        otherCities: otherCityFarmeely,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createFarmeely,
   joinFarmeely,
@@ -337,4 +381,5 @@ module.exports = {
   getSingleFarmeely,
   getAllFarmeely,
   getFarmeelyOfUser,
+  getFeaturedFarmeelyByCity,
 };

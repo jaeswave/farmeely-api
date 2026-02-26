@@ -8,6 +8,7 @@ const {
   getSingleFarmeely,
   getAllFarmeely,
   getFarmeelyOfUser,
+  getFeaturedFarmeelyByCity,
 } = require("../controllers/farmeely");
 const router = express.Router()
 
@@ -17,5 +18,6 @@ router.post("/add-slot/farmeely/:farmeely_id", authorization, addMoreSlots)
 router.get("/farmeely/:slot_id", authorization, getSingleFarmeely)
 router.get("/farmeely", authorization, getAllFarmeely)
 router.get("/user/farmeely", authorization, getFarmeelyOfUser)
+router.get("/featured/farmeely", authorization, getFeaturedFarmeelyByCity)
 
 module.exports = router
