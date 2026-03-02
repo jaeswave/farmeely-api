@@ -69,7 +69,7 @@ const register = async (req, res, next) => {
 
     await createWallet("spend", "NGN", customer_id);
 
-    const otpValue = 123456;
+    const otpValue = generateOTP();
     redisClient.set(`otp_${email}`, otpValue, {
       EX: 60 * 60,
     });
@@ -79,7 +79,6 @@ const register = async (req, res, next) => {
       otp: `${otpValue}`,
     };
 
-    console.log("hello world");
 
     readFileAndSendEmail(
       email,
