@@ -350,6 +350,9 @@ const getFeaturedFarmeelyByCity = async (req, res, next) => {
       farmeely_status: FARMEELY_STATUS.inProgress,
     });
 
+    console.log("User Cities:", userCities);
+    console.log("Total active farmeely groups:", allFarmeely);
+
     const sameCity = [];
     const otherCities = [];
 
@@ -370,6 +373,31 @@ const getFeaturedFarmeelyByCity = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+};
+
+//end point for loading state and city
+const getAllStates = async (req, res, next) => {
+  try {
+    // const states = await findQuery("States");
+    // const cities = await findQuery("Cities");
+
+    const data = {
+      lagos: [{city: "ikeja",delivery: 5000}],
+      abuja: ["Garki", "Wuse", "Maitama"],
+      kano: ["Nassarawa", "Fagge", "Gwale"],
+    };
+
+    res.status(200).json({
+      status: true,
+      message: "Successfully fetched states and cities",
+      data: {
+        states: states,
+        cities: cities,
+      },
+    });
+  } catch (err) {
+    next(err);
   }
 };
 

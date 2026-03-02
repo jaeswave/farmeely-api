@@ -408,11 +408,23 @@ const getUserProfile = async (req, res, next) => {
 const addAddress = async (req, res, next) => {
   try {
     const { customer_id } = req.params;
-    const { address, city } = req.body;
+    const { address, city, state } = req.body;
 
     // Validate required fields
     if (!address || address.trim() === "") {
       const err = new Error("Address is required");
+      err.status = 400;
+      return next(err);
+    }
+
+    if (!city || city.trim() === "") {
+      const err = new Error("City is required");
+      err.status = 400;
+      return next(err);
+    }
+
+    if (!state || state.trim() === "") {
+      const err = new Error("State is required");
       err.status = 400;
       return next(err);
     }
@@ -489,6 +501,21 @@ const getAddresses = async (req, res, next) => {
       status: true,
       message: "Addresses retrieved successfully",
       data: addresses,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+//get all state
+const getAllStates = async (req, res, next) => {
+  try {
+    const states = await findQuery("States");
+
+    return res.status(200).json({
+      status: true,
+      message: "States retrieved successfully",
+      data: states,
     });
   } catch (error) {
     return next(error);
@@ -660,4 +687,5 @@ module.exports = {
   getAvailablePreferences,
   registerPushToken,
   sendPushNotification,
+  getAllStates,
 };

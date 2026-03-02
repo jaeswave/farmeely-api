@@ -20,6 +20,8 @@ const {
   registerPushToken,
   sendPushNotification,
   getAvailablePreferences,
+  getAllStates,
+
 } = require("../controllers/users");
 const { login } = require("../controllers/auth");
 
@@ -65,5 +67,6 @@ router.post("/preferences", authorization, savePreferences);
 router.get("/preferences", authorization, getAvailablePreferences);
 router.post("/register-push-token", authorization, registerPushToken);
 router.post("/send-push-notification", authorization, sendPushNotification);
+router.get("/states", getAllStates);
 
 module.exports = router;
