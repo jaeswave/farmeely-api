@@ -30,6 +30,11 @@ const createFarmeely = async (req, res, next) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
+    //check the city in the State db and get the delivery fee
+    const states = await FindQuery("States");
+    const deliveryFee =
+      states.find((state) => state.cities.includes(city))?.delivery_fee || 0;
+
     const totalSlots = product.total_slots;
     const creatorSlots = parseInt(number_of_slot);
 
@@ -38,7 +43,7 @@ const createFarmeely = async (req, res, next) => {
     }
 
     const pricePerSlot = Math.ceil(product.product_price / totalSlots);
-    const creatorAmount = pricePerSlot * creatorSlots;
+    const creatorAmount = pricePerSlot * creatorSlots + deliveryFee;
 
     const farmeely_id = uuidv4();
     const slot_id = uuidv4();
@@ -52,6 +57,7 @@ const createFarmeely = async (req, res, next) => {
       city,
       expected_date,
       total_slots: totalSlots,
+      delivery_fee: deliveryFee,
       slots_available: totalSlots,
       price_per_slot: pricePerSlot,
       creator_amount: creatorAmount,
@@ -105,6 +111,11 @@ const joinFarmeely = async (req, res, next) => {
         .json({ message: "This farmeely group is completed or not available" });
     }
 
+    //check the city in the State db and get the delivery fee
+    const states = await FindQuery("States");
+    const deliveryFee =
+      states.find((state) => state.cities.includes(city))?.delivery_fee || 0;
+
     //check if stotal_slot and the and the joined user array.slot_joined is the same
     const totalSlots = farmeely.total_slots;
     const totalSlotsJoined = farmeely.joined_users.reduce(
@@ -136,7 +147,7 @@ const joinFarmeely = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid slot amount" });
     }
 
-    const amountToPay = slotsToJoin * farmeely.price_per_slot;
+    const amountToPay = slotsToJoin * farmeely.price_per_slot + deliveryFee;
 
     await updateWithOperators(
       "Farmeely",
@@ -383,7 +394,7 @@ const getAllStates = async (req, res, next) => {
     // const cities = await findQuery("Cities");
 
     const data = {
-      lagos: [{city: "ikeja",delivery: 5000}],
+      lagos: [{ city: "ikeja", delivery: 5000 }],
       abuja: ["Garki", "Wuse", "Maitama"],
       kano: ["Nassarawa", "Fagge", "Gwale"],
     };
