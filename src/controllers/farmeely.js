@@ -31,7 +31,7 @@ const createFarmeely = async (req, res, next) => {
     }
 
     //check the city in the State db and get the delivery fee
-    const states = await FindQuery("States");
+    const states = await findQuery("States");
     const deliveryFee =
       states.find((state) => state.cities.includes(city))?.delivery_fee || 0;
 
@@ -112,7 +112,7 @@ const joinFarmeely = async (req, res, next) => {
     }
 
     //check the city in the State db and get the delivery fee
-    const states = await FindQuery("States");
+    const states = await findQuery("States");
     const deliveryFee =
       states.find((state) => state.cities.includes(city))?.delivery_fee || 0;
 
