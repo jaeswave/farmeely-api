@@ -13,7 +13,7 @@ const {
   ACTIVE_SLOT_STATUS,
   FARMEELY_STATUS,
 } = require("../enums/farmeely");
-const hello =11111
+const hello = 11111;
 
 const createFarmeely = async (req, res, next) => {
   const { product_id } = req.params;
@@ -33,8 +33,13 @@ const createFarmeely = async (req, res, next) => {
 
     //check the city in the State db and get the delivery fee
     const states = await findQuery("States");
+
+    const normalizedCity = city.toLowerCase();
+
     const deliveryFee =
-      states.find((state) => state.cities.includes(city))?.delivery_fee || 0;
+      states
+        .flatMap((s) => s.cities)
+        .find((c) => c.name.toLowerCase() === normalizedCity)?.deliveryFee ?? 0;
 
     const totalSlots = product.total_slots;
     const creatorSlots = parseInt(number_of_slot);
@@ -83,7 +88,10 @@ const createFarmeely = async (req, res, next) => {
     res.status(200).json({
       status: true,
       message: "Farmeely created. Complete payment to activate.",
-      data: farmeely_id,
+      data: {
+        farmeely_id: farmeely_id,
+        delivery_fee: deliveryFee,
+      },
     });
   } catch (err) {
     next(err);
@@ -114,8 +122,14 @@ const joinFarmeely = async (req, res, next) => {
 
     //check the city in the State db and get the delivery fee
     const states = await findQuery("States");
-    const deliveryFee =
-      states.find((state) => state.cities.includes(city))?.delivery_fee || 0;
+     const normalizedCity = city.toLowerCase();
+
+     const deliveryFee =
+       states
+         .flatMap((s) => s.cities)
+         .find((c) => c.name.toLowerCase() === normalizedCity)?.deliveryFee ??
+       0;
+  
 
     //check if stotal_slot and the and the joined user array.slot_joined is the same
     const totalSlots = farmeely.total_slots;
@@ -175,6 +189,7 @@ const joinFarmeely = async (req, res, next) => {
       message: "Slots reserved. Complete payment.",
       data: {
         farmeely_id: farmeely.farmeely_id,
+        delivery_fee: deliveryFee,
         pending_slots: slotsToJoin,
         amount: amountToPay,
       },
