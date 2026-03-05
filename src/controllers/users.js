@@ -79,7 +79,6 @@ const register = async (req, res, next) => {
       otp: `${otpValue}`,
     };
 
-
     readFileAndSendEmail(
       email,
       "OTP VERIFICATION",
@@ -330,16 +329,15 @@ const changeCustomersPassword = async (req, res, next) => {
 
     const newPasswordHashAndSalt = await hashMyPassword(new_password);
     await updateOne(
- await updateOne(
-  "Users",
-  { customer_id: customer_id },
-  {
-    $set: {
-      password_salt: newPasswordHashAndSalt[0],
-      password_hash: newPasswordHashAndSalt[1],
-    },
-  },
-);
+      "Users",
+      { customer_id: customer_id },
+      {
+        $set: {
+          password_salt: newPasswordHashAndSalt[0],
+          password_hash: newPasswordHashAndSalt[1],
+        },
+      },
+    );
 
     res.status(200).send({
       status: true,

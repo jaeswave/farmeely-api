@@ -46,7 +46,7 @@ router.post(
 );
 
 router.patch(
-  "/change-password/",
+  "/change-password",
   authorization,
   validationMiddleware(validationData.changePassword),
   changeCustomersPassword,
