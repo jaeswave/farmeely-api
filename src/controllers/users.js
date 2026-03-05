@@ -330,13 +330,16 @@ const changeCustomersPassword = async (req, res, next) => {
 
     const newPasswordHashAndSalt = await hashMyPassword(new_password);
     await updateOne(
-      "Users",
-      { customer_id: customer_id },
-      {
-        password_salt: newPasswordHashAndSalt[0],
-        password_hash: newPasswordHashAndSalt[1],
-      },
-    );
+ await updateOne(
+  "Users",
+  { customer_id: customer_id },
+  {
+    $set: {
+      password_salt: newPasswordHashAndSalt[0],
+      password_hash: newPasswordHashAndSalt[1],
+    },
+  },
+);
 
     res.status(200).send({
       status: true,
