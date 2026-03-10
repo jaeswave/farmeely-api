@@ -19,15 +19,48 @@ const initializePayment = async (req, res) => {
     const user_id = req.params.customer_id;
     const email = req.params.email;
 
-    // Get farmeely details
-    const [farmeely] = await findQuery("Farmeely", { farmeely_id });
+    // Try to get from main Farmeely first, then staging
+    let [farmeely] = await findQuery("Farmeely", { farmeely_id });
+    let isStaging = false;
+
+    if (!farmeely) {
+      [farmeely] = await findQuery("FarmeelyStaging", { farmeely_id });
+      isStaging = true;
+    }
 
     if (!farmeely) {
       return res.status(404).json({ message: "Farmeely not found" });
     }
 
-    // Find the user
-    const user = farmeely.joined_users.find((u) => u.user_id === user_id);
+    // Find the user based on where they are
+    let user = null;
+
+    if (isStaging) {
+      // Check if user is creator in staging
+      if (farmeely.creator?.user_id === user_id) {
+        user = {
+          ...farmeely.creator,
+          is_creator: true,
+          user_id: farmeely.creator.user_id,
+          user_email: farmeely.creator.user_email,
+          slots_joined: 0,
+          amount_paid: 0,
+          is_paid: farmeely.is_creator_paid || false,
+        };
+      } else {
+        // Check pending_joins
+        user = farmeely.pending_joins?.find((u) => u.user_id === user_id);
+        if (user) {
+          user.is_creator = false;
+          user.slots_joined = 0;
+          user.amount_paid = 0;
+          user.is_paid = user.is_paid || false;
+        }
+      }
+    } else {
+      // Main farmeely - find in joined_users
+      user = farmeely.joined_users?.find((u) => u.user_id === user_id);
+    }
 
     if (!user) {
       return res
@@ -43,7 +76,20 @@ const initializePayment = async (req, res) => {
     // Determine amount and details based on payment type
     switch (payment_type) {
       case "create":
-        // Creator's initial payment
+        // Only creator can do this
+        if (!user.is_creator) {
+          return res
+            .status(403)
+            .json({ message: "Only creator can make creation payment" });
+        }
+
+        // Check if creator already paid
+        if (user.is_paid) {
+          return res
+            .status(400)
+            .json({ message: "Creator payment already completed" });
+        }
+
         amount = user.pending_amount || 0;
         pendingSlots = user.pending_slots || 0;
         pendingAmount = user.pending_amount || 0;
@@ -57,7 +103,13 @@ const initializePayment = async (req, res) => {
         break;
 
       case "join":
-        // New member joining
+        // Check if user already paid
+        if (user.is_paid) {
+          return res
+            .status(400)
+            .json({ message: "Join payment already completed" });
+        }
+
         amount = user.pending_amount || 0;
         pendingSlots = user.pending_slots || 0;
         pendingAmount = user.pending_amount || 0;
@@ -71,7 +123,13 @@ const initializePayment = async (req, res) => {
         break;
 
       case "add_slots":
-        // Adding more slots (creator or member)
+        // Adding more slots - only for main farmeely users
+        if (isStaging) {
+          return res.status(400).json({
+            message: "Cannot add slots until farmeely is activated",
+          });
+        }
+
         amount = user.pending_additional_amount || 0;
         pendingSlots = user.pending_additional_slots || 0;
         pendingAmount = user.pending_additional_amount || 0;
@@ -106,7 +164,7 @@ const initializePayment = async (req, res) => {
 
     console.log("Payment response:", response.data.data);
 
-    // Record transaction with clear metadata
+    // Record transaction with metadata including staging flag
     const transaction = await insertOne("Transaction", {
       farmeely_id: farmeely_id,
       customer_id: user_id,
@@ -114,14 +172,20 @@ const initializePayment = async (req, res) => {
       reference: response.data.data.reference,
       transaction_status: "pending",
       payment_type: payment_type,
+      is_staging: isStaging, // Add flag to know if this was from staging
       metadata: {
-        current_slots: user.slots_joined,
-        current_amount_paid: user.amount_paid,
+        current_slots: user.slots_joined || 0,
+        current_amount_paid: user.amount_paid || 0,
         pending_slots: pendingSlots,
         pending_amount: pendingAmount,
         user_type: user.is_creator ? "creator" : "member",
         current_payment_status: user.is_paid ? "paid" : "pending",
         description: description,
+        // Store staging specific data if needed
+        ...(isStaging && {
+          staging_creator: farmeely.creator,
+          staging_pending_joins: farmeely.pending_joins,
+        }),
       },
       created_at: new Date(),
     });
@@ -170,29 +234,28 @@ const verifyPayment = async (req, res) => {
       throw new Error("Transaction not found");
     }
 
-    const { farmeely_id, payment_type, amount } = transaction;
+    const { farmeely_id, payment_type, amount, is_staging } = transaction;
 
-    // Get farmeely details
-    const [farmeely] = await findQuery("Farmeely", { farmeely_id });
-    if (!farmeely) {
-      throw new Error("Farmeely not found");
-    }
-
-    const user = farmeely.joined_users.find((u) => u.user_id === user_id);
-    if (!user) {
-      throw new Error("User not found in farmeely");
-    }
-
-    // Handle different payment types
+    // Handle different payment types with staging awareness
     switch (payment_type) {
       case "create":
-        await handleCreatePayment(farmeely, user, transaction);
+        await handleCreatePayment(
+          farmeely_id,
+          user_id,
+          transaction,
+          is_staging,
+        );
         break;
       case "join":
-        await handleJoinPayment(farmeely, user, transaction);
+        await handleJoinPayment(farmeely_id, user_id, transaction, is_staging);
         break;
       case "add_slots":
-        await handleAddSlotsPayment(farmeely, user, transaction);
+        await handleAddSlotsPayment(
+          farmeely_id,
+          user_id,
+          transaction,
+          is_staging,
+        );
         break;
       default:
         throw new Error("Unknown payment type");
@@ -248,87 +311,301 @@ const verifyPayment = async (req, res) => {
   }
 };
 
-// ========== PAYMENT HANDLERS ==========
+// ========== UPDATED PAYMENT HANDLERS ==========
 
-// Handler for creator's initial payment
-const handleCreatePayment = async (farmeely, user, transaction) => {
-  const pendingSlots = user.pending_slots || 0;
-  const pendingAmount = user.pending_amount || 0;
+// Handler for creator's initial payment (now handles both staging and main)
+const handleCreatePayment = async (
+  farmeely_id,
+  user_id,
+  transaction,
+  is_staging,
+) => {
+  if (is_staging) {
+    // Handle staging creator payment - move from staging to main
+    const [stagingFarmeely] = await findQuery("FarmeelyStaging", {
+      farmeely_id,
+    });
 
-  if (pendingSlots <= 0 || pendingAmount <= 0) {
-    throw new Error("No pending slots or amount found for creation payment");
-  }
+    if (!stagingFarmeely) {
+      throw new Error("Staging farmeely not found");
+    }
 
-  const updateOperations = {
-    $inc: {
-      slots_available: -pendingSlots,
-      "joined_users.$.slots_joined": pendingSlots,
-      "joined_users.$.amount_paid": pendingAmount,
-    },
-    $set: {
-      farmeely_status: FARMEELY_STATUS.inProgress,
-      "joined_users.$.pending_slots": 0,
-      "joined_users.$.pending_amount": 0,
-      "joined_users.$.is_paid": true,
+    const pendingSlots = stagingFarmeely.creator.pending_slots;
+    const pendingAmount = stagingFarmeely.creator.pending_amount;
+
+    if (pendingSlots <= 0 || pendingAmount <= 0) {
+      throw new Error("No pending slots or amount found for creation payment");
+    }
+
+    // Calculate total slots taken after creator payment
+    const totalSlotsTaken = pendingSlots;
+
+    // Prepare main farmeely document
+    const mainFarmeely = {
+      farmeely_id: stagingFarmeely.farmeely_id,
+      slot_id: stagingFarmeely.slot_id,
+      product_id: stagingFarmeely.product_id,
+      product_name: stagingFarmeely.product_name,
+      address: stagingFarmeely.address,
+      city: stagingFarmeely.city,
+      expected_date: stagingFarmeely.expected_date,
+      total_slots: stagingFarmeely.total_slots,
+      delivery_fee: stagingFarmeely.delivery_fee,
+      slots_available: stagingFarmeely.total_slots - totalSlotsTaken,
+      price_per_slot: stagingFarmeely.price_per_slot,
+      creator_amount: stagingFarmeely.creator_amount,
+      slot_status:
+        stagingFarmeely.total_slots - totalSlotsTaken === 0
+          ? ACTIVE_SLOT_STATUS.inactive
+          : ACTIVE_SLOT_STATUS.active,
       payment_status: "completed",
-      slot_status: ACTIVE_SLOT_STATUS.active,
+      farmeely_status: FARMEELY_STATUS.inProgress,
+      created_at: new Date(),
       activated_at: new Date(),
-    },
-  };
+      joined_users: [
+        {
+          user_id: stagingFarmeely.creator.user_id,
+          user_email: stagingFarmeely.creator.user_email,
+          is_creator: true,
+          slots_joined: pendingSlots,
+          pending_slots: 0,
+          amount_paid: pendingAmount,
+          pending_amount: 0,
+          is_paid: true,
+          joined_at: stagingFarmeely.creator.joined_at,
+        },
+      ],
+      // Store reference to any pending joins for later processing
+      pending_joins: stagingFarmeely.pending_joins || [],
+    };
 
-  await updateOne(
-    "Farmeely",
-    { farmeely_id: farmeely.farmeely_id, "joined_users.user_id": user.user_id },
-    updateOperations,
-  );
+    // Insert into main Farmeely collection
+    await insertOne("Farmeely", mainFarmeely);
 
-  console.log(
-    `Creator payment processed: ${pendingSlots} slots, ${pendingAmount}`,
-  );
-};
+    // Mark staging as completed (don't delete, just mark for history)
+    await updateOne(
+      "FarmeelyStaging",
+      { farmeely_id },
+      {
+        $set: {
+          status: "completed",
+          completed_at: new Date(),
+          main_farmeely_id: farmeely_id,
+          is_creator_paid: true,
+        },
+      },
+    );
 
-// Handler for new member joining payment
-const handleJoinPayment = async (farmeely, user, transaction) => {
-  const pendingSlots = user.pending_slots || 0;
-  const pendingAmount = user.pending_amount || 0;
+    console.log(
+      `✅ Creator payment processed: Farmeely ${farmeely_id} moved from staging to main`,
+    );
+  } else {
+    // Handle existing main farmeely creator payment (though this shouldn't happen normally)
+    const [farmeely] = await findQuery("Farmeely", { farmeely_id });
+    if (!farmeely) throw new Error("Farmeely not found");
 
-  if (pendingSlots <= 0 || pendingAmount <= 0) {
-    throw new Error("No pending slots or amount found for join payment");
+    const user = farmeely.joined_users.find((u) => u.user_id === user_id);
+    if (!user) throw new Error("User not found");
+
+    const pendingSlots = user.pending_slots || 0;
+    const pendingAmount = user.pending_amount || 0;
+
+    const updateOperations = {
+      $inc: {
+        slots_available: -pendingSlots,
+        "joined_users.$.slots_joined": pendingSlots,
+        "joined_users.$.amount_paid": pendingAmount,
+      },
+      $set: {
+        farmeely_status: FARMEELY_STATUS.inProgress,
+        "joined_users.$.pending_slots": 0,
+        "joined_users.$.pending_amount": 0,
+        "joined_users.$.is_paid": true,
+        payment_status: "completed",
+        slot_status: ACTIVE_SLOT_STATUS.active,
+        activated_at: new Date(),
+      },
+    };
+
+    await updateOne(
+      "Farmeely",
+      { farmeely_id, "joined_users.user_id": user_id },
+      updateOperations,
+    );
   }
 
-  const newAvailableSlots = farmeely.slots_available - pendingSlots;
-  const newSlotStatus =
-    newAvailableSlots === 0
-      ? ACTIVE_SLOT_STATUS.inactive
-      : ACTIVE_SLOT_STATUS.active;
+  console.log(`✅ Create payment processed for farmeely ${farmeely_id}`);
+};
 
-  const updateOperations = {
-    $inc: {
-      slots_available: -pendingSlots,
-      "joined_users.$.slots_joined": pendingSlots,
-      "joined_users.$.amount_paid": pendingAmount,
-    },
-    $set: {
-      "joined_users.$.pending_slots": 0,
-      "joined_users.$.pending_amount": 0,
-      "joined_users.$.is_paid": true,
-      slot_status: newSlotStatus,
-    },
-  };
+// Handler for new member joining payment (handles both staging and main)
+const handleJoinPayment = async (
+  farmeely_id,
+  user_id,
+  transaction,
+  is_staging,
+) => {
+  const { metadata } = transaction;
 
-  await updateOne(
-    "Farmeely",
-    { farmeely_id: farmeely.farmeely_id, "joined_users.user_id": user.user_id },
-    updateOperations,
-  );
+  if (is_staging) {
+    // Case 1: User is joining a staging farmeely
+    const [stagingFarmeely] = await findQuery("FarmeelyStaging", {
+      farmeely_id,
+      "pending_joins.user_id": user_id,
+    });
+
+    if (!stagingFarmeely) {
+      throw new Error("Pending join not found in staging");
+    }
+
+    const pendingJoin = stagingFarmeely.pending_joins.find(
+      (pj) => pj.user_id === user_id,
+    );
+
+    // Mark this pending join as paid in staging
+    await updateOne(
+      "FarmeelyStaging",
+      {
+        farmeely_id,
+        "pending_joins.user_id": user_id,
+      },
+      {
+        $set: {
+          "pending_joins.$.is_paid": true,
+          "pending_joins.$.paid_at": new Date(),
+          "pending_joins.$.payment_reference": transaction.reference,
+        },
+      },
+    );
+
+    // Check if creator has already paid
+    const updatedStaging = await findQuery("FarmeelyStaging", { farmeely_id });
+    const isCreatorPaid = updatedStaging[0].is_creator_paid;
+
+    if (isCreatorPaid) {
+      // Creator already paid, move this user to main farmeely immediately
+      const [mainFarmeely] = await findQuery("Farmeely", { farmeely_id });
+
+      if (!mainFarmeely) {
+        throw new Error(
+          "Main farmeely not found - creator should have paid first",
+        );
+      }
+
+      // Add user to main farmeely
+      const newAvailableSlots =
+        mainFarmeely.slots_available - pendingJoin.pending_slots;
+      const newSlotStatus =
+        newAvailableSlots === 0
+          ? ACTIVE_SLOT_STATUS.inactive
+          : ACTIVE_SLOT_STATUS.active;
+
+      await updateWithOperators(
+        "Farmeely",
+        { farmeely_id },
+        {
+          $push: {
+            joined_users: {
+              user_id: pendingJoin.user_id,
+              user_email: pendingJoin.user_email,
+              is_creator: false,
+              slots_joined: pendingJoin.pending_slots,
+              pending_slots: 0,
+              amount_paid: pendingJoin.pending_amount,
+              pending_amount: 0,
+              is_paid: true,
+              joined_at: pendingJoin.joined_at,
+              paid_at: new Date(),
+            },
+          },
+          $inc: {
+            slots_available: -pendingJoin.pending_slots,
+          },
+          $set: {
+            slot_status: newSlotStatus,
+          },
+        },
+      );
+
+      // Remove from staging pending_joins
+      await updateOne(
+        "FarmeelyStaging",
+        { farmeely_id },
+        {
+          $pull: {
+            pending_joins: { user_id: user_id },
+          },
+        },
+      );
+
+      console.log(
+        `✅ User ${user_id} moved from staging to main farmeely after payment`,
+      );
+    } else {
+      console.log(
+        `✅ User ${user_id} payment recorded in staging, waiting for creator payment`,
+      );
+    }
+  } else {
+    // Case 2: User is joining an existing main farmeely
+    const [farmeely] = await findQuery("Farmeely", { farmeely_id });
+    if (!farmeely) throw new Error("Farmeely not found");
+
+    const user = farmeely.joined_users.find((u) => u.user_id === user_id);
+    if (!user) throw new Error("User not found in farmeely");
+
+    const pendingSlots = user.pending_slots || 0;
+    const pendingAmount = user.pending_amount || 0;
+
+    const newAvailableSlots = farmeely.slots_available - pendingSlots;
+    const newSlotStatus =
+      newAvailableSlots === 0
+        ? ACTIVE_SLOT_STATUS.inactive
+        : ACTIVE_SLOT_STATUS.active;
+
+    const updateOperations = {
+      $inc: {
+        slots_available: -pendingSlots,
+        "joined_users.$.slots_joined": pendingSlots,
+        "joined_users.$.amount_paid": pendingAmount,
+      },
+      $set: {
+        "joined_users.$.pending_slots": 0,
+        "joined_users.$.pending_amount": 0,
+        "joined_users.$.is_paid": true,
+        "joined_users.$.paid_at": new Date(),
+        slot_status: newSlotStatus,
+      },
+    };
+
+    await updateOne(
+      "Farmeely",
+      { farmeely_id, "joined_users.user_id": user_id },
+      updateOperations,
+    );
+  }
 
   console.log(
-    `Join payment processed: ${pendingSlots} slots, $${pendingAmount}`,
+    `✅ Join payment processed for user ${user_id} in farmeely ${farmeely_id}`,
   );
 };
 
-// Handler for adding more slots (creator or member)
-const handleAddSlotsPayment = async (farmeely, user, transaction) => {
+// Handler for adding more slots (no changes needed - only applies to main farmeely)
+const handleAddSlotsPayment = async (
+  farmeely_id,
+  user_id,
+  transaction,
+  is_staging,
+) => {
+  if (is_staging) {
+    throw new Error("Cannot add slots to a staging farmeely");
+  }
+
+  const [farmeely] = await findQuery("Farmeely", { farmeely_id });
+  if (!farmeely) throw new Error("Farmeely not found");
+
+  const user = farmeely.joined_users.find((u) => u.user_id === user_id);
+  if (!user) throw new Error("User not found in farmeely");
+
   const pendingAdditionalSlots = user.pending_additional_slots || 0;
   const pendingAdditionalAmount = user.pending_additional_amount || 0;
 
@@ -336,7 +613,6 @@ const handleAddSlotsPayment = async (farmeely, user, transaction) => {
     throw new Error("No pending additional slots or amount found");
   }
 
-  // Verify user is already paid for existing slots
   if (!user.is_paid) {
     throw new Error("User must be paid for existing slots before adding more");
   }
@@ -363,19 +639,85 @@ const handleAddSlotsPayment = async (farmeely, user, transaction) => {
 
   await updateOne(
     "Farmeely",
-    { farmeely_id: farmeely.farmeely_id, "joined_users.user_id": user.user_id },
+    { farmeely_id, "joined_users.user_id": user_id },
     updateOperations,
   );
 
   console.log(
-    `Additional slots payment processed: ${pendingAdditionalSlots} slots, $${pendingAdditionalAmount}`,
+    `✅ Additional slots payment processed: ${pendingAdditionalSlots} slots for user ${user_id}`,
   );
 };
 
+// Helper function to check if a staging farmeely is ready to be fully activated
+const checkAndActivateStagingFarmeely = async (farmeely_id) => {
+  const [staging] = await findQuery("FarmeelyStaging", { farmeely_id });
 
+  if (!staging) return false;
+
+  // Check if creator is paid
+  if (!staging.is_creator_paid) return false;
+
+  // Check if all pending joins are paid
+  const allPendingJoinsPaid =
+    staging.pending_joins?.every((pj) => pj.is_paid) ?? true;
+
+  if (allPendingJoinsPaid && staging.pending_joins?.length > 0) {
+    // Move all pending joins to main farmeely
+    const [mainFarmeely] = await findQuery("Farmeely", { farmeely_id });
+
+    if (!mainFarmeely) return false;
+
+    for (const pendingJoin of staging.pending_joins) {
+      if (pendingJoin.is_paid) {
+        const newAvailableSlots =
+          mainFarmeely.slots_available - pendingJoin.pending_slots;
+
+        await updateWithOperators(
+          "Farmeely",
+          { farmeely_id },
+          {
+            $push: {
+              joined_users: {
+                user_id: pendingJoin.user_id,
+                user_email: pendingJoin.user_email,
+                is_creator: false,
+                slots_joined: pendingJoin.pending_slots,
+                pending_slots: 0,
+                amount_paid: pendingJoin.pending_amount,
+                pending_amount: 0,
+                is_paid: true,
+                joined_at: pendingJoin.joined_at,
+                paid_at: pendingJoin.paid_at,
+              },
+            },
+            $inc: {
+              slots_available: -pendingJoin.pending_slots,
+            },
+            $set: {
+              slot_status:
+                newAvailableSlots === 0
+                  ? ACTIVE_SLOT_STATUS.inactive
+                  : ACTIVE_SLOT_STATUS.active,
+            },
+          },
+        );
+      }
+    }
+
+    // Clear pending_joins from staging
+    await updateOne(
+      "FarmeelyStaging",
+      { farmeely_id },
+      {
+        $set: { pending_joins: [] },
+      },
+    );
+  }
+
+  return true;
+};
 
 module.exports = {
-  // Payment functions
   initializePayment,
   verifyPayment,
   handleCreatePayment,

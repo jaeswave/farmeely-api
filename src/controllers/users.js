@@ -36,10 +36,21 @@ const register = async (req, res, next) => {
       $or: [{ email: email }, { phone_number: phone_number }],
     });
 
+    //check if user exist and user is not verify yet
     if (!isEmpty(checkIfUserExist)) {
-      const err = new Error("User already exist....Please log in");
-      err.status = 400;
-      return next(err);
+      if (!checkIfUserExist.isOtpVerified) {
+        return res.status(400).json({
+          success: false,
+          message: "User already exists but email not verified",
+          code: "USER_UNVERIFIED",
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "User already exists. Please login",
+          code: "USER_EXISTS",
+        });
+      }
     }
 
     const HashedPasswordAndSalt = await hashMyPassword(password);
