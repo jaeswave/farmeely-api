@@ -6,6 +6,7 @@ const {
 } = require("../repository");
 const { messages } = require("../constants/messages");
 const Expatriate = require("../models/Expatriate");
+const REQUEST_STATUS = require("../enums/farmeely");
 
 const { v4: uuidv4 } = require("uuid");
 
@@ -47,7 +48,7 @@ const submitCustomRequest = async (req, res, next) => {
       preferred_delivery_date: preferred_delivery_date
         ? new Date(preferred_delivery_date)
         : null,
-      status: "submitted",
+      status: REQUEST_STATUS.PENDING,
       created_at: new Date(),
       updated_at: new Date(),
     });
@@ -57,14 +58,13 @@ const submitCustomRequest = async (req, res, next) => {
       message: "Request submitted successfully",
       data: {
         request_id,
-        status: "submitted",
+        status,
       },
     });
   } catch (err) {
     next(err);
   }
 };
-
 
 const getExpatriate = async (req, res, next) => {
   try {
@@ -86,5 +86,5 @@ const getExpatriate = async (req, res, next) => {
 
 module.exports = {
   submitCustomRequest,
-  getExpatriate
+  getExpatriate,
 };

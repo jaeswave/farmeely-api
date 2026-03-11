@@ -14,8 +14,17 @@ const FARMEELY_STATUS = {
   completed: "completed",
 };
 
+const REQUEST_STATUS = {
+  PENDING: "pending",
+  APPROVED: "paid",
+  IN_PROGRESS: "shipped",
+  COMPLETED: "delivered",
+  DECLINED: "canceled",
+};
+
 module.exports = {
   MINIMUM_FARMEELY_PRICE,
   ACTIVE_SLOT_STATUS,
   FARMEELY_STATUS,
+  REQUEST_STATUS,
 };

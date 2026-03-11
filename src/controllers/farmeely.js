@@ -15,10 +15,6 @@ const {
 } = require("../enums/farmeely");
 const hello = 11111;
 
-
-
-
-
 const createFarmeely = async (req, res, next) => {
   const { product_id } = req.params;
   const { address, city, number_of_slot, expected_date } = req.body;
@@ -447,7 +443,6 @@ const getAllFarmeely = async (req, res, next) => {
   }
 };
 
-//get all farmeely of a user
 const getFarmeelyOfUser = async (req, res, next) => {
   const user_id = req.params.customer_id;
 
@@ -456,10 +451,25 @@ const getFarmeelyOfUser = async (req, res, next) => {
       "joined_users.user_id": user_id,
     });
 
+    const updatedFarmeely = await Promise.all(
+      farmeelySlots.map(async (slot) => {
+        const product = await findQuery("Products", {
+          product_id: Number(slot.product_id),
+        });
+
+        const productImage = product[0].product_image;
+
+        return {
+          ...slot,
+          product_image: productImage,
+        };
+      }),
+    );
+
     res.status(200).json({
       status: true,
       message: "Successfully fetched Farmeely",
-      data: farmeelySlots,
+      data: updatedFarmeely,
     });
   } catch (err) {
     next(err);

@@ -1,3 +1,4 @@
+const { string } = require("joi");
 const mongoose = require("mongoose");
 
 const expatriateSchema = new mongoose.Schema({
@@ -13,14 +14,15 @@ const expatriateSchema = new mongoose.Schema({
       quantity: Number,
       description: String,
 
-      // Admin fills these later
       unit_price: Number,
       total_price: Number,
     },
   ],
-
-
-  subtotal: Number, // calculated after quote
+requestStatus: {
+  type: String,
+  enum: ["pending", "paid", "shipped", "delivered", "cancelled"],
+  required: true,
+},
   shipping_fee: Number, // admin sets
   total_amount: Number, // subtotal + shipping
 
@@ -29,16 +31,6 @@ const expatriateSchema = new mongoose.Schema({
   preferred_delivery_date: Date,
 
   status: String,
-  /*
-    submitted
-    quoted
-    awaiting_payment
-    paid
-    processing
-    shipped
-    completed
-    rejected
-  */
 
   payment_reference: String,
 
