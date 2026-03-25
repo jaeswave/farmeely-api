@@ -23,6 +23,7 @@ const farmeelyRoute = require("./src/routes/farmeely");
 const paymentRoutes = require("./src/routes/payment");
 const expatriateRoutes = require("./src/routes/Expatriate");
 const admn = require("./src/firebase")
+const adminRoutes = require("./src/routes/admin");
 
 const app = express();
 app.use(bodyParser.json());
@@ -46,6 +47,7 @@ app.use("/api/v1/", transactionRoutes);
 app.use("/api/v1/", farmeelyRoute);
 app.use("/api/v1/payment", paymentRoutes);
 app.use("/api/v1/", expatriateRoutes);
+app.use("/api/v1/admin", adminRoutes);
 
 displayRoutes(app);
 //connect to database
