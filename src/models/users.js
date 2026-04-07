@@ -12,7 +12,7 @@ const UserSchema = new mongoose.Schema({
     required: true,
   },
   isOtpVerified: {
-    type: string,
+    type: Boolean,
     default: false,
   },
   gender: {

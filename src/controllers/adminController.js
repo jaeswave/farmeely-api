@@ -4,6 +4,9 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { isEmpty } = require("../utils");
 const { messages } = require("../constants/messages");
+const { sendNotificationToAllCustomers } = require("../services/push");
+
+
 
 // Admin login
 const adminLogin = async (req, res, next) => {
@@ -591,6 +594,235 @@ const getAdminProfile = async (req, res, next) => {
   }
 };
 
+// Get OTP Verified Enum
+const getOtpVerifiedEnums = async (req, res, next) => {
+  try {
+    res.status(200).json({
+      status: true,
+      message: "OTP verified enums retrieved successfully",
+      data: [true, false],
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Farmeely
+const getFarmeelyStatusEnums = (req, res) => {
+  res.json({
+    status: true,
+    data: ["in_progress", "group_completed", "processing", "completed"],
+  });
+};
+
+const getSlotStatusEnums = (req, res) => {
+  res.json({ status: true, data: ["active", "inactive"] });
+};
+
+const getPaymentStatusEnums = (req, res) => {
+  res.json({ status: true, data: ["pending", "completed"] });
+};
+
+// Expatriate
+const getExpatriateStatusEnums = (req, res) => {
+  res.json({
+    status: true,
+    data: ["pending", "paid", "shipped", "delivered", "cancelled"],
+  });
+};
+
+// Orders
+const getOrderStatusEnums = (req, res) => {
+  res.json({
+    status: true,
+    data: ["pending", "in progress", "completed", "cancelled"],
+  });
+};
+
+// Users
+
+
+const updateOtpVerifiedStatus = async (req, res, next) => {
+  const { user_id } = req.params;
+
+  const { isOtpVerified } = req.body;
+
+  try {
+    // ✅ Validate input
+    if (typeof isOtpVerified !== "boolean") {
+      return res.status(400).json({
+        status: false,
+        message: "isOtpVerified must be true or false",
+      });
+    }
+
+    const result = await updateOne(
+      "Users",
+      { customer_id: user_id },
+      { $set: { isOtpVerified } },
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({
+        status: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      status: true,
+      message: `User OTP verification set to ${isOtpVerified}`,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const updateOrderStatus = async (req, res, next) => {
+  const { order_id } = req.params;
+  const { status } = req.body;
+
+  const allowed = ["pending", "in progress", "completed", "cancelled"];
+
+  try {
+    if (!allowed.includes(status)) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Invalid order status" });
+    }
+
+    await updateOne("Orders", { order_id }, { $set: { order_status: status } });
+
+    res.json({ status: true, message: "Order status updated" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const updateFarmeelyStatus = async (req, res, next) => {
+  const { farmeely_id } = req.params;
+  const { status } = req.body;
+
+  const allowed = ["in_progress", "group_completed", "processing", "completed"];
+
+  try {
+    if (!allowed.includes(status)) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Invalid farmeely status" });
+    }
+
+    await updateOne(
+      "Farmeely",
+      { farmeely_id },
+      { $set: { farmeely_status: status } },
+    );
+
+    res.json({ status: true, message: "Farmeely status updated" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+
+const updateExpatriateStatus = async (req, res, next) => {
+  const { request_id } = req.params;
+  const { status } = req.body;
+
+  const allowed = ["pending", "paid", "shipped", "delivered", "cancelled"];
+
+  try {
+    if (!allowed.includes(status)) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Invalid expatriate status" });
+    }
+
+    await updateOne(
+      "Expatriate",
+      { request_id },
+      { $set: { requestStatus: status } },
+    );
+
+    res.json({ status: true, message: "Expatriate status updated" });
+  } catch (err) {
+    next(err);
+  }
+};
+const createProduct = async (req, res, next) => {
+  const {
+    product_name,
+    product_price,
+    portion_price,
+    total_slots,
+    product_image,
+    description,
+  } = req.body;
+
+  try {
+    const products = await findQuery("Products", {});
+    const product_id = products.length + 1;
+
+    const newProduct = {
+      product_id,
+      product_name,
+      product_price,
+      portion_price,
+      total_slots,
+      product_image,
+      description,
+    };
+
+    await insertOne("Products", newProduct);
+
+    res.status(201).json({
+      status: true,
+      message: "Product created successfully",
+      data: newProduct,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Admin Send Notification
+// Your controller - REPLACE with this
+const sendNotification = async (req, res, next) => {
+  const { title, body } = req.body;  // No customer_id needed
+
+  try {
+    // Basic validation
+    if (!title || !body) {
+      return res.status(400).json({
+        status: false,
+        message: "title and body are required",
+      });
+    }
+
+    // Send to ALL customers
+    const result = await sendNotificationToAllCustomers(title, body);
+
+    if (result.success) {
+      res.status(200).json({
+        status: true,
+        message: "Notification sent to all customers successfully",
+        devices: result.totalDevices,
+        succeeded: result.totalSuccess,
+        failed: result.totalFailure
+      });
+    } else {
+      res.status(200).json({
+        status: false,
+        message: result.message,
+      });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+
 module.exports = {
   adminLogin,
   createAdmin,
@@ -605,4 +837,16 @@ module.exports = {
   getAllExpatriateRequests,
   updateExpatriateRequestStatus,
   getAdminProfile,
+  getOtpVerifiedEnums,
+  updateOtpVerifiedStatus,
+  getFarmeelyStatusEnums,
+  getSlotStatusEnums,
+  getPaymentStatusEnums,
+  getExpatriateStatusEnums,
+  getOrderStatusEnums,
+  updateOrderStatus,
+  updateFarmeelyStatus,
+  createProduct,
+  updateExpatriateStatus,
+  sendNotification
 };
