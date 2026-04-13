@@ -660,7 +660,7 @@ const updateOtpVerifiedStatus = async (req, res, next) => {
     const result = await updateOne(
       "Users",
       { customer_id: user_id },
-      { $set: { isOtpVerified } }, // This should work
+      { $set: { isOtpVerified: isOtpVerified } }, // This should work
     );
 
     if (result.matchedCount === 0) {
