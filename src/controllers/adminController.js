@@ -645,7 +645,7 @@ const getOrderStatusEnums = (req, res) => {
 const updateOtpVerifiedStatus = async (req, res, next) => {
   const { user_id } = req.params;
 
-  const { isOtpVerified } = req.params;
+  const { isOtpVerified } = req.body;
 
   try {
     // ✅ Validate input
