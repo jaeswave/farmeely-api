@@ -656,10 +656,11 @@ const updateOtpVerifiedStatus = async (req, res, next) => {
       });
     }
 
+    // ✅ Pass $set operator explicitly if your wrapper expects it
     const result = await updateOne(
       "Users",
       { customer_id: user_id },
-      { $set: { isOtpVerified } },
+      { $set: { isOtpVerified } }, // This should work
     );
 
     if (result.matchedCount === 0) {
