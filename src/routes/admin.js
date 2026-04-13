@@ -40,7 +40,7 @@ router.put(
 router.get("/profile", adminController.getAdminProfile);
 
 router.get("/admin/enums/otp-verified", adminController.getOtpVerifiedEnums);
-router.put("/users/:user_id/otp-verified", adminController.updateOtpVerifiedStatus);
+router.put("/users/:user_id/", adminController.updateOtpVerifiedStatus);
 // ================= ENUM ROUTES =================
 router.get("/enums/farmeely-status", adminController.getFarmeelyStatusEnums);
 router.get("/enums/slot-status", adminController.getSlotStatusEnums);

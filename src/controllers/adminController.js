@@ -646,6 +646,7 @@ const updateOtpVerifiedStatus = async (req, res, next) => {
   const { user_id } = req.params;
 
   const { isOtpVerified } = req.body;
+  console.log(isOtpVerified);
 
   try {
     // ✅ Validate input
@@ -655,6 +656,8 @@ const updateOtpVerifiedStatus = async (req, res, next) => {
         message: "isOtpVerified must be true or false",
       });
     }
+
+    
 
     // ✅ Pass $set operator explicitly if your wrapper expects it
     const result = await updateOne(
