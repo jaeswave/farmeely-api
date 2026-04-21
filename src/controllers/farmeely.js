@@ -547,6 +547,11 @@ const getAllStates = async (req, res, next) => {
   }
 };
 
+
+
+
+
+
 module.exports = {
   createFarmeely,
   joinFarmeely,
@@ -555,4 +560,6 @@ module.exports = {
   getAllFarmeely,
   getFarmeelyOfUser,
   getFeaturedFarmeelyByCity,
+  getAllStates,
+
 };

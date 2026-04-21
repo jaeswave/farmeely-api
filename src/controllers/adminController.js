@@ -5,6 +5,8 @@ const bcrypt = require("bcrypt");
 const { isEmpty } = require("../utils");
 const { messages } = require("../constants/messages");
 const { sendNotificationToAllCustomers } = require("../services/push");
+const { ACTIVE_SLOT_STATUS, FARMEELY_STATUS } = require("../enums/farmeely");
+
 
 
 
@@ -827,6 +829,129 @@ const sendNotification = async (req, res, next) => {
 };
 
 
+
+const adminCreateFarmeely = async (req, res, next) => {
+  const { 
+    product_id, 
+    city, 
+    expected_date 
+  } = req.body;
+
+  try {
+    // 1. Validate required fields
+    if (!product_id || !city) {
+      return res.status(400).json({
+        status: false,
+        message: "product_id and city are required"
+      });
+    }
+
+    // 2. Get product details
+    const [product] = await findQuery("Products", {
+      product_id: Number(product_id),
+    });
+
+    if (!product) {
+      return res.status(404).json({ 
+        status: false, 
+        message: "Product not found" 
+      });
+    }
+
+    // 3. Get delivery fee from States collection
+    const states = await findQuery("States");
+    const normalizedCity = city.toLowerCase();
+    
+    let deliveryFee = 0;
+    let cityFound = false;
+    
+    for (const state of states) {
+      const cityData = state.cities?.find(
+        (c) => c.name.toLowerCase() === normalizedCity
+      );
+      if (cityData) {
+        deliveryFee = cityData.deliveryFee || 0;
+        cityFound = true;
+        break;
+      }
+    }
+    
+    if (!cityFound) {
+      return res.status(400).json({ 
+        status: false,
+        message: "Invalid city. Please select a supported city." 
+      });
+    }
+
+    // 4. Calculate values
+    const totalSlots = product.total_slots;
+    const pricePerSlot = Math.ceil(product.product_price / totalSlots);
+    const totalProductPrice = product.product_price + deliveryFee;
+    
+    // 5. Generate unique IDs
+    const farmeely_id = `admin_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+    const slot_id = `slot_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+
+    // 6. Create farmeely document
+    const farmeelyData = {
+      farmeely_id: farmeely_id,
+      slot_id: slot_id,
+      user_id: req.admin.id,
+      farmeely_status: FARMEELY_STATUS.inProgress,
+      slot_status: ACTIVE_SLOT_STATUS.active,
+      payment_status: "completed",
+      product_id: String(product_id),
+      product_name: product.product_name,
+      product_image: product.product_image,
+      product_description: product.description || product.product_name,
+      address: null,  // No address from admin
+      city: city,
+      expected_date: expected_date ? new Date(expected_date) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      total_slots: totalSlots,
+      creator_slots_taken: 0,  // Admin takes zero slots
+      slots_available: totalSlots,  // All slots available
+      price_per_slot: pricePerSlot,
+      creator_amount: 0,  // Admin pays nothing
+      total_product_price: totalProductPrice,
+      joined_users: [],  // Empty array - users will join
+      created_at: new Date(),
+    };
+
+    // 7. Insert into database
+    const result = await insertOne("Farmeely", farmeelyData);
+
+    // 8. Return success response
+    res.status(201).json({
+      status: true,
+      message: "Farmeely group created successfully by admin",
+      data: {
+        farmeely_id: farmeely_id,
+        product_id: product.product_id,
+        product_name: product.product_name,
+        product_image: product.product_image,
+        city: city,
+        total_slots: totalSlots,
+        available_slots: totalSlots,
+        price_per_slot: pricePerSlot,
+        delivery_fee: deliveryFee,
+        total_price: totalProductPrice,
+        expected_date: farmeelyData.expected_date,
+        created_by_admin: true,
+        admin_id: req.admin.id,
+        admin_email: req.admin.email
+      },
+    });
+    
+  } catch (err) {
+    console.error("Admin create farmeely error:", err);
+    next(err);
+  }
+};
+
+
+
+
+
 module.exports = {
   adminLogin,
   createAdmin,
@@ -852,5 +977,6 @@ module.exports = {
   updateFarmeelyStatus,
   createProduct,
   updateExpatriateStatus,
-  sendNotification
+  sendNotification,
+  adminCreateFarmeely
 };
