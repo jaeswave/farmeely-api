@@ -12,7 +12,7 @@ const FarmeelySchema = new mongoose.Schema({
   farmeely_status: {
     type: String,
     enum: ["in_progress", "group_completed","processing", "completed"],
-    default: null,
+    default: "in_progress",
     required: true,
   },
   slot_id: {

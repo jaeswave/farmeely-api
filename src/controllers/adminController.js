@@ -926,6 +926,7 @@ const adminCreateFarmeely = async (req, res, next) => {
       message: "Farmeely group created successfully by admin",
       data: {
         farmeely_id: farmeely_id,
+        farmeely_status: FARMEELY_STATUS.inProgress,
         product_id: product.product_id,
         product_name: product.product_name,
         product_image: product.product_image,
