@@ -14,6 +14,7 @@ const {
   FARMEELY_STATUS,
 } = require("../enums/farmeely");
 const hello = 11111;
+const PLATFORM_FEE_PERCENT = 0.1; // 10%
 
 const createFarmeely = async (req, res, next) => {
   const { product_id } = req.params;
@@ -113,7 +114,11 @@ const createFarmeely = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid slot count" });
     }
 
-    const pricePerSlot = Math.ceil(product.product_price / totalSlots);
+    const basePricePerSlot = Math.ceil(product.product_price / totalSlots);
+
+    const pricePerSlot = Math.ceil(
+      basePricePerSlot * (1 + PLATFORM_FEE_PERCENT),
+    );
     const creatorAmount = pricePerSlot * creatorSlots + deliveryFee;
 
     const farmeely_id = uuidv4();
@@ -547,11 +552,6 @@ const getAllStates = async (req, res, next) => {
   }
 };
 
-
-
-
-
-
 module.exports = {
   createFarmeely,
   joinFarmeely,
@@ -561,5 +561,4 @@ module.exports = {
   getFarmeelyOfUser,
   getFeaturedFarmeelyByCity,
   getAllStates,
-
 };
