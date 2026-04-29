@@ -172,7 +172,7 @@ const createFarmeely = async (req, res, next) => {
 };
 
 const joinFarmeely = async (req, res, next) => {
-  const { product_id } = req.params;
+  const { farmeely_id,product_id } = req.params;
   const { city, number_of_slot } = req.body;
 
   const user_id = req.params.customer_id;
@@ -202,7 +202,7 @@ const joinFarmeely = async (req, res, next) => {
     // Check if user has already joined a main farmeely for this product/city
     const [existingMainJoin] = await findQuery("Farmeely", {
       product_id: Number(product_id),
-      city: city,
+      farmeely_id: farmeely_id,
       "joined_users.user_id": user_id,
     });
 
@@ -221,7 +221,7 @@ const joinFarmeely = async (req, res, next) => {
     // First check if there's an active main farmeely
     let [mainFarmeely] = await findQuery("Farmeely", {
       product_id: Number(product_id),
-      city,
+      farmeelt_id: farmeely_id,
       payment_status: "completed",
       slot_status: ACTIVE_SLOT_STATUS.active,
       farmeely_status: FARMEELY_STATUS.inProgress,
@@ -234,6 +234,7 @@ const joinFarmeely = async (req, res, next) => {
         user_id,
         user_email,
         number_of_slot,
+        city,
         res,
       );
     }
@@ -241,7 +242,7 @@ const joinFarmeely = async (req, res, next) => {
     // If no main farmeely, check staging for pending farmeely
     const [stagingFarmeely] = await findQuery("FarmeelyStaging", {
       product_id: Number(product_id),
-      city,
+      farmeely_id,
       status: "pending_payment",
     });
 
@@ -271,9 +272,17 @@ const joinFarmeely = async (req, res, next) => {
       });
     }
 
+    const states = await findQuery("States");
+
+    const deliveryFee =
+      states
+        .flatMap((s) => s.cities)
+        .find((c) => c.name.toLowerCase() === city.toLowerCase())
+        ?.deliveryFee || 0;
+
     const amountToPay =
       slotsToJoin * stagingFarmeely.price_per_slot +
-      stagingFarmeely.delivery_fee;
+      deliveryFee;
 
     // Add to pending_joins in staging
     await updateWithOperators(
@@ -288,6 +297,8 @@ const joinFarmeely = async (req, res, next) => {
             pending_amount: amountToPay,
             is_paid: false,
             joined_at: new Date(),
+            delivery_city: city,
+            delivery_fee: deliveryFee,
           },
         },
       },
@@ -298,7 +309,7 @@ const joinFarmeely = async (req, res, next) => {
       message: "Slots reserved. Complete payment to join.",
       data: {
         farmeely_id: stagingFarmeely.farmeely_id,
-        delivery_fee: stagingFarmeely.delivery_fee,
+        delivery_fee: DeliveryGee,
         pending_slots: slotsToJoin,
         amount: amountToPay,
         note: "This farmeely is pending creator payment. You'll be added once creator pays.",

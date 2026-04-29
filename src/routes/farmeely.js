@@ -13,7 +13,7 @@ const {
 const router = express.Router()
 
 router.post("/create/farmeely/:product_id", authorization, createFarmeely)
-router.patch("/join/farmeely/:product_id", authorization, joinFarmeely)
+router.patch("/join/farmeely/:product_id/:farmeely_id", authorization, joinFarmeely)
 router.post("/add-slot/farmeely/:farmeely_id", authorization, addMoreSlots)
 router.get("/farmeely/:slot_id", authorization, getSingleFarmeely)
 router.get("/farmeely", authorization, getAllFarmeely)
