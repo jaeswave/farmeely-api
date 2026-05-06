@@ -172,7 +172,7 @@ const createFarmeely = async (req, res, next) => {
 };
 
 const joinFarmeely = async (req, res, next) => {
-  const { farmeely_id,product_id } = req.params;
+  const { product_id,farmeely_id } = req.params;
   const { city, number_of_slot } = req.body;
 
   const user_id = req.params.customer_id;
@@ -547,7 +547,7 @@ const getAllStates = async (req, res, next) => {
       status: true,
       message: "Successfully fetched states and cities",
       data: {
-        states: states,
+        // states: states,
         cities: cities,
       },
     });
