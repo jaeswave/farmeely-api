@@ -541,15 +541,8 @@ const getFeaturedFarmeelyByCity = async (req, res, next) => {
 //end point for loading state and city
 const getAllStates = async (req, res, next) => {
   try {
-    // const states = await findQuery("States");
-    // const cities = await findQuery("Cities");
-
-    const data = {
-      lagos: [{ city: "ikeja", delivery: 5000 }],
-      abuja: ["Garki", "Wuse", "Maitama"],
-      kano: ["Nassarawa", "Fagge", "Gwale"],
-    };
-
+    const states = await findQuery("States");
+ 
     res.status(200).json({
       status: true,
       message: "Successfully fetched states and cities",
