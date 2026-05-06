@@ -172,7 +172,7 @@ const createFarmeely = async (req, res, next) => {
 };
 
 const joinFarmeely = async (req, res, next) => {
-  const { product_id,farmeely_id } = req.params;
+  const { product_id, farmeely_id } = req.params;
   const { city, number_of_slot } = req.body;
 
   const user_id = req.params.customer_id;
@@ -281,8 +281,7 @@ const joinFarmeely = async (req, res, next) => {
         ?.deliveryFee || 0;
 
     const amountToPay =
-      slotsToJoin * stagingFarmeely.price_per_slot +
-      deliveryFee;
+      slotsToJoin * stagingFarmeely.price_per_slot + deliveryFee;
 
     // Add to pending_joins in staging
     await updateWithOperators(
@@ -538,9 +537,6 @@ const getFeaturedFarmeelyByCity = async (req, res, next) => {
   }
 };
 
-//end point for loading state and city
-
-
 module.exports = {
   createFarmeely,
   joinFarmeely,
@@ -549,5 +545,4 @@ module.exports = {
   getAllFarmeely,
   getFarmeelyOfUser,
   getFeaturedFarmeelyByCity,
-  getAllStates,
 };
