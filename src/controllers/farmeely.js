@@ -539,22 +539,7 @@ const getFeaturedFarmeelyByCity = async (req, res, next) => {
 };
 
 //end point for loading state and city
-const getAllStates = async (req, res, next) => {
-  try {
-    const states = await findQuery("States");
- 
-    res.status(200).json({
-      status: true,
-      message: "Successfully fetched states and cities",
-      data: {
-        // states: states,
-        cities: cities,
-      },
-    });
-  } catch (err) {
-    next(err);
-  }
-};
+
 
 module.exports = {
   createFarmeely,
