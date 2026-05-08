@@ -230,7 +230,7 @@ const verifyPayment = async (req, res) => {
 
     // Get transaction details
     const [transaction] = await findQuery("Transaction", { reference });
-    if (!transaction) {
+    if (transaction) {
       throw new Error("Transaction not found");
     }
 
