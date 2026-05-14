@@ -58,9 +58,28 @@ const updateProduct = async (req, res, next) => {
     next(error);
   }
 };
+const getCategory = async (req, res, next) => {
+  try {
+      const products = await findQuery("Products", {});
+
+      // Extract unique categories
+      const categories = [
+        ...new Set(products.map((product) => product.category)),
+      ];
+
+    res.status(201).json({
+      status: true,
+      message: "Categories fetched successfully ",
+      data: categories,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 module.exports = {
   getAllProducts,
   getSingleProduct,
   updateProduct,
+  getCategory,
 };

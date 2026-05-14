@@ -4,6 +4,7 @@ const {
   getAllProducts,
   getSingleProduct,
   updateProduct,
+  getCategory,
 } = require("../controllers/products")
 
 /**
@@ -72,5 +73,6 @@ router.get("/product/get_single/product/:id", getSingleProduct)
  *          Bad Request
  */
 router.patch("/products/update/product/:id", updateProduct)
+router.get("/products/get-categories", getCategory)
 
 module.exports = router
