@@ -16,302 +16,510 @@ const {
 const hello = 11111;
 const PLATFORM_FEE_PERCENT = 0.1; // 10%
 
+// const createFarmeely = async (req, res, next) => {
+//   const { product_id } = req.params;
+//   const { address, city, number_of_slot, expected_date } = req.body;
+
+//   const user_id = req.params.customer_id;
+//   const user_email = req.params.email;
+
+//   try {
+//     const [product] = await findQuery("Products", {
+//       product_id: Number(product_id),
+//     });
+
+//     if (!product) {
+//       return res.status(404).json({ message: "Product not found" });
+//     }
+
+//     // ========== DUPLICATE CHECKS ==========
+
+//     // Check 1: Does user already have a PENDING farmeely in staging for this product/city?
+//     const [existingStaging] = await findQuery("FarmeelyStaging", {
+//       product_id: Number(product_id),
+//       city: city,
+//       "creator.user_id": user_id,
+//       status: "pending_payment",
+//     });
+
+//     if (existingStaging) {
+//       return res.status(400).json({
+//         message:
+//           "You already have a pending farmeely group for this product in this city. Complete payment first.",
+//         data: {
+//           farmeely_id: existingStaging.farmeely_id,
+//           status: "pending_payment",
+//         },
+//       });
+//     }
+
+//     // Check 2: Does user already have an ACTIVE farmeely in main collection for this product/city?
+//     const [existingActive] = await findQuery("Farmeely", {
+//       product_id: Number(product_id),
+//       city: city,
+//       "joined_users.user_id": user_id,
+//       "joined_users.is_creator": true,
+//       farmeely_status: {
+//         $in: [FARMEELY_STATUS.inProgress, FARMEELY_STATUS.groupCompleted],
+//       },
+//     });
+
+//     if (existingActive) {
+//       return res.status(400).json({
+//         message:
+//           "You already have an active farmeely group for this product in this city",
+//         data: {
+//           farmeely_id: existingActive.farmeely_id,
+//           status: existingActive.farmeely_status,
+//         },
+//       });
+//     }
+
+//     // Check 3: Is there already an ACTIVE farmeely for this product/city that's accepting members?
+//     // (Optional - depends on your business logic. Do you want to prevent multiple groups for same product/city?)
+//     const [otherActiveFarmeely] = await findQuery("Farmeely", {
+//       product_id: Number(product_id),
+//       city: city,
+//       farmeely_status: FARMEELY_STATUS.inProgress,
+//       slot_status: ACTIVE_SLOT_STATUS.active,
+//     });
+
+//     if (otherActiveFarmeely) {
+//       // You can either block or just warn. Here we'll block to prevent fragmentation
+//       return res.status(400).json({
+//         message:
+//           "An active farmeely group already exists for this product in this city. You can join that one instead.",
+//         data: {
+//           farmeely_id: otherActiveFarmeely.farmeely_id,
+//         },
+//       });
+//     }
+
+//     // ========== END DUPLICATE CHECKS ==========
+
+//     // Check the city in the State db and get the delivery fee
+//     const states = await findQuery("States");
+
+//     const normalizedCity = city.toLowerCase();
+
+//     const deliveryFee =
+//       states
+//         .flatMap((s) => s.cities)
+//         .find((c) => c.name.toLowerCase() === normalizedCity)?.deliveryFee ?? 0;
+
+//     const totalSlots = product.total_slots;
+//     const creatorSlots = parseInt(number_of_slot);
+
+//     if (creatorSlots <= 0 || creatorSlots > totalSlots) {
+//       return res.status(400).json({ message: "Invalid slot count" });
+//     }
+
+//     const basePricePerSlot = Math.ceil(product.product_price / totalSlots);
+
+//     const pricePerSlot = Math.ceil(
+//       basePricePerSlot * (1 + PLATFORM_FEE_PERCENT),
+//     );
+//     const creatorAmount = pricePerSlot * creatorSlots + deliveryFee;
+
+//     const farmeely_id = uuidv4();
+//     const slot_id = uuidv4();
+
+//     // Store in staging collection
+//     await insertOne("FarmeelyStaging", {
+//       farmeely_id,
+//       slot_id,
+//       product_id,
+//       product_name: product.product_name,
+//       address,
+//       city,
+//       expected_date,
+//       total_slots: totalSlots,
+//       delivery_fee: deliveryFee,
+//       slots_available: totalSlots,
+//       price_per_slot: pricePerSlot,
+//       creator_amount: creatorAmount,
+//       status: "pending_payment",
+//       created_at: new Date(),
+//       expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
+
+//       // Creator info
+//       creator: {
+//         user_id,
+//         user_email,
+//         pending_slots: creatorSlots,
+//         pending_amount: creatorAmount,
+//         joined_at: new Date(),
+//       },
+
+//       // Track people who want to join (before payment)
+//       pending_joins: [],
+
+//       // Track if creator has paid
+//       is_creator_paid: false,
+//     });
+
+//     res.status(200).json({
+//       status: true,
+//       message: "Farmeely created. Complete payment to activate.",
+//       data: {
+//         farmeely_id: farmeely_id,
+//         delivery_fee: deliveryFee,
+//       },
+//     });
+//   } catch (err) {
+//     next(err);
+//   }
+// };
+
+// const joinFarmeely = async (req, res, next) => {
+//   const { product_id, farmeely_id } = req.params;
+//   const { city, number_of_slot } = req.body;
+
+//   const user_id = req.params.customer_id;
+//   const user_email = req.params.email;
+
+//   try {
+//     // ========== DUPLICATE CHECKS FOR JOINING ==========
+
+//     // Check if user already has a pending join in staging
+//     const [existingStagingJoin] = await findQuery("FarmeelyStaging", {
+//       product_id: Number(product_id),
+//       city: city,
+//       "pending_joins.user_id": user_id,
+//       status: "pending_payment",
+//     });
+
+//     if (existingStagingJoin) {
+//       return res.status(400).json({
+//         message:
+//           "You already have a pending join request for a farmeely in this city",
+//         data: {
+//           farmeely_id: existingStagingJoin.farmeely_id,
+//         },
+//       });
+//     }
+
+//     // Check if user has already joined a main farmeely for this product/city
+//     const [existingMainJoin] = await findQuery("Farmeely", {
+//       product_id: Number(product_id),
+//       farmeely_id: farmeely_id,
+//       "joined_users.user_id": user_id,
+//     });
+
+//     if (existingMainJoin) {
+//       return res.status(400).json({
+//         message:
+//           "You have already joined a farmeely group for this product in this city",
+//         data: {
+//           farmeely_id: existingMainJoin.farmeely_id,
+//         },
+//       });
+//     }
+
+//     // ========== END DUPLICATE CHECKS ==========
+
+//     // First check if there's an active main farmeely
+//     let [mainFarmeely] = await findQuery("Farmeely", {
+//       product_id: Number(product_id),
+//       farmeelt_id: farmeely_id,
+//       payment_status: "completed",
+//       slot_status: ACTIVE_SLOT_STATUS.active,
+//       farmeely_status: FARMEELY_STATUS.inProgress,
+//     });
+
+//     // If main farmeely exists, handle join directly to main
+//     if (mainFarmeely) {
+//       return await handleDirectJoinToMain(
+//         mainFarmeely,
+//         user_id,
+//         user_email,
+//         number_of_slot,
+//         city,
+//         res,
+//       );
+//     }
+
+//     // If no main farmeely, check staging for pending farmeely
+//     const [stagingFarmeely] = await findQuery("FarmeelyStaging", {
+//       product_id: Number(product_id),
+//       farmeely_id,
+//       status: "pending_payment",
+//     });
+
+//     if (!stagingFarmeely) {
+//       return res.status(404).json({
+//         message:
+//           "No active or pending farmeely group found in this city. You can create one!",
+//       });
+//     }
+
+//     // Calculate available slots in staging
+//     const creatorSlots = stagingFarmeely.creator.pending_slots;
+//     const pendingJoinsTotal =
+//       stagingFarmeely.pending_joins?.reduce(
+//         (sum, join) => sum + (join.pending_slots || 0),
+//         0,
+//       ) || 0;
+
+//     const availableSlots =
+//       stagingFarmeely.total_slots - (creatorSlots + pendingJoinsTotal);
+
+//     const slotsToJoin = parseInt(number_of_slot);
+
+//     if (slotsToJoin <= 0 || slotsToJoin > availableSlots) {
+//       return res.status(400).json({
+//         message: `Invalid slot amount. Available slots: ${availableSlots}`,
+//       });
+//     }
+
+//     const states = await findQuery("States");
+
+//     const deliveryFee =
+//       states
+//         .flatMap((s) => s.cities)
+//         .find((c) => c.name.toLowerCase() === city.toLowerCase())
+//         ?.deliveryFee || 0;
+
+//     const amountToPay =
+//       slotsToJoin * stagingFarmeely.price_per_slot + deliveryFee;
+
+//     // Add to pending_joins in staging
+//     await updateWithOperators(
+//       "FarmeelyStaging",
+//       { farmeely_id: stagingFarmeely.farmeely_id },
+//       {
+//         $push: {
+//           pending_joins: {
+//             user_id,
+//             user_email,
+//             pending_slots: slotsToJoin,
+//             pending_amount: amountToPay,
+//             is_paid: false,
+//             joined_at: new Date(),
+//             delivery_city: city,
+//             delivery_fee: deliveryFee,
+//           },
+//         },
+//       },
+//     );
+
+//     return res.status(200).json({
+//       status: true,
+//       message: "Slots reserved. Complete payment to join.",
+//       data: {
+//         farmeely_id: stagingFarmeely.farmeely_id,
+//         delivery_fee: DeliveryGee,
+//         pending_slots: slotsToJoin,
+//         amount: amountToPay,
+//         note: "This farmeely is pending creator payment. You'll be added once creator pays.",
+//       },
+//     });
+//   } catch (err) {
+//     next(err);
+//   }
+// };
+
+
+
 const createFarmeely = async (req, res, next) => {
-  const { product_id } = req.params;
-  const { address, city, number_of_slot, expected_date } = req.body;
+const { product_id } = req.params;
+const { address, city, number_of_slot, expected_date } = req.body;
+const user_id = req.params.customer_id;
+const user_email = req.params.email;
 
-  const user_id = req.params.customer_id;
-  const user_email = req.params.email;
+try {
+  const [product] = await findQuery("Products", {
+    product_id: Number(product_id),
+  });
+  if (!product) return res.status(404).json({ message: "Product not found" });
 
-  try {
-    const [product] = await findQuery("Products", {
-      product_id: Number(product_id),
+  // DUPLICATE CHECKS
+  const [existingActive] = await findQuery("Farmeely", {
+    product_id: Number(product_id),
+    city: city,
+    "joined_users.user_id": user_id,
+    "joined_users.is_creator": true,
+    farmeely_status: {
+      $in: [FARMEELY_STATUS.pending, FARMEELY_STATUS.inProgress],
+    },
+  });
+
+  if (existingActive) {
+    return res.status(400).json({
+      message: "You already have an active or pending farmeely",
+      data: { farmeely_id: existingActive.farmeely_id },
     });
+  }
 
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
+  // Calculate fees
+  const states = await findQuery("States");
+  const normalizedCity = city.toLowerCase();
+  const deliveryFee =
+    states
+      .flatMap((s) => s.cities)
+      .find((c) => c.name.toLowerCase() === normalizedCity)?.deliveryFee ?? 0;
 
-    // ========== DUPLICATE CHECKS ==========
+  const totalSlots = product.total_slots;
+  const creatorSlots = parseInt(number_of_slot);
 
-    // Check 1: Does user already have a PENDING farmeely in staging for this product/city?
-    const [existingStaging] = await findQuery("FarmeelyStaging", {
-      product_id: Number(product_id),
-      city: city,
-      "creator.user_id": user_id,
-      status: "pending_payment",
-    });
+  if (creatorSlots <= 0 || creatorSlots > totalSlots) {
+    return res.status(400).json({ message: "Invalid slot count" });
+  }
 
-    if (existingStaging) {
-      return res.status(400).json({
-        message:
-          "You already have a pending farmeely group for this product in this city. Complete payment first.",
-        data: {
-          farmeely_id: existingStaging.farmeely_id,
-          status: "pending_payment",
-        },
-      });
-    }
+  const basePricePerSlot = Math.ceil(product.product_price / totalSlots);
+  const pricePerSlot = Math.ceil(basePricePerSlot * (1 + PLATFORM_FEE_PERCENT));
+  const creatorAmount = pricePerSlot * creatorSlots + deliveryFee;
 
-    // Check 2: Does user already have an ACTIVE farmeely in main collection for this product/city?
-    const [existingActive] = await findQuery("Farmeely", {
-      product_id: Number(product_id),
-      city: city,
-      "joined_users.user_id": user_id,
-      "joined_users.is_creator": true,
-      farmeely_status: {
-        $in: [FARMEELY_STATUS.inProgress, FARMEELY_STATUS.groupCompleted],
-      },
-    });
+  const farmeely_id = uuidv4();
+  const slot_id = uuidv4();
 
-    if (existingActive) {
-      return res.status(400).json({
-        message:
-          "You already have an active farmeely group for this product in this city",
-        data: {
-          farmeely_id: existingActive.farmeely_id,
-          status: existingActive.farmeely_status,
-        },
-      });
-    }
+  // STORE DIRECTLY IN MAIN COLLECTION with pending status
+  await insertOne("Farmeely", {
+    farmeely_id,
+    slot_id,
+    product_id: Number(product_id),
+    product_name: product.product_name,
+    address,
+    city,
+    expected_date,
+    total_slots: totalSlots,
+    delivery_fee: deliveryFee,
+    slots_available: totalSlots,
+    price_per_slot: pricePerSlot,
+    creator_amount: creatorAmount,
 
-    // Check 3: Is there already an ACTIVE farmeely for this product/city that's accepting members?
-    // (Optional - depends on your business logic. Do you want to prevent multiple groups for same product/city?)
-    const [otherActiveFarmeely] = await findQuery("Farmeely", {
-      product_id: Number(product_id),
-      city: city,
-      farmeely_status: FARMEELY_STATUS.inProgress,
-      slot_status: ACTIVE_SLOT_STATUS.active,
-    });
+    // Critical: Payment status tracking
+    payment_status: "pending", // 'pending' or 'completed'
+    farmeely_status: FARMEELY_STATUS.pending, // 'pending', 'inProgress', 'groupCompleted'
+    slot_status: ACTIVE_SLOT_STATUS.inactive, // Inactive until creator pays
 
-    if (otherActiveFarmeely) {
-      // You can either block or just warn. Here we'll block to prevent fragmentation
-      return res.status(400).json({
-        message:
-          "An active farmeely group already exists for this product in this city. You can join that one instead.",
-        data: {
-          farmeely_id: otherActiveFarmeely.farmeely_id,
-        },
-      });
-    }
+    created_at: new Date(),
+    expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h to pay
 
-    // ========== END DUPLICATE CHECKS ==========
-
-    // Check the city in the State db and get the delivery fee
-    const states = await findQuery("States");
-
-    const normalizedCity = city.toLowerCase();
-
-    const deliveryFee =
-      states
-        .flatMap((s) => s.cities)
-        .find((c) => c.name.toLowerCase() === normalizedCity)?.deliveryFee ?? 0;
-
-    const totalSlots = product.total_slots;
-    const creatorSlots = parseInt(number_of_slot);
-
-    if (creatorSlots <= 0 || creatorSlots > totalSlots) {
-      return res.status(400).json({ message: "Invalid slot count" });
-    }
-
-    const basePricePerSlot = Math.ceil(product.product_price / totalSlots);
-
-    const pricePerSlot = Math.ceil(
-      basePricePerSlot * (1 + PLATFORM_FEE_PERCENT),
-    );
-    const creatorAmount = pricePerSlot * creatorSlots + deliveryFee;
-
-    const farmeely_id = uuidv4();
-    const slot_id = uuidv4();
-
-    // Store in staging collection
-    await insertOne("FarmeelyStaging", {
-      farmeely_id,
-      slot_id,
-      product_id,
-      product_name: product.product_name,
-      address,
-      city,
-      expected_date,
-      total_slots: totalSlots,
-      delivery_fee: deliveryFee,
-      slots_available: totalSlots,
-      price_per_slot: pricePerSlot,
-      creator_amount: creatorAmount,
-      status: "pending_payment",
-      created_at: new Date(),
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
-
-      // Creator info
-      creator: {
+    joined_users: [
+      {
         user_id,
         user_email,
+        is_creator: true,
+        slots_joined: 0, // Not confirmed until payment
         pending_slots: creatorSlots,
+        amount_paid: 0,
         pending_amount: creatorAmount,
+        is_paid: false,
+        delivery_city: city,
+        delivery_fee: deliveryFee,
         joined_at: new Date(),
       },
+    ],
+  });
 
-      // Track people who want to join (before payment)
-      pending_joins: [],
-
-      // Track if creator has paid
-      is_creator_paid: false,
-    });
-
-    res.status(200).json({
-      status: true,
-      message: "Farmeely created. Complete payment to activate.",
-      data: {
-        farmeely_id: farmeely_id,
-        delivery_fee: deliveryFee,
-      },
-    });
-  } catch (err) {
-    next(err);
-  }
+  res.status(200).json({
+    status: true,
+    message: "Farmeely created. Complete payment to activate.",
+    data: {
+      farmeely_id,
+      delivery_fee: deliveryFee,
+      amount_to_pay: creatorAmount,
+    },
+  });
+} catch (err) {
+  next(err);
+}
 };
 
+// Updated joinFarmeely - DIRECT to main with pending status
 const joinFarmeely = async (req, res, next) => {
   const { product_id, farmeely_id } = req.params;
   const { city, number_of_slot } = req.body;
-
   const user_id = req.params.customer_id;
   const user_email = req.params.email;
 
   try {
-    // ========== DUPLICATE CHECKS FOR JOINING ==========
-
-    // Check if user already has a pending join in staging
-    const [existingStagingJoin] = await findQuery("FarmeelyStaging", {
-      product_id: Number(product_id),
-      city: city,
-      "pending_joins.user_id": user_id,
-      status: "pending_payment",
-    });
-
-    if (existingStagingJoin) {
-      return res.status(400).json({
-        message:
-          "You already have a pending join request for a farmeely in this city",
-        data: {
-          farmeely_id: existingStagingJoin.farmeely_id,
-        },
-      });
-    }
-
-    // Check if user has already joined a main farmeely for this product/city
-    const [existingMainJoin] = await findQuery("Farmeely", {
+    // Find the farmeely (could be pending or active)
+    const [farmeely] = await findQuery("Farmeely", {
       product_id: Number(product_id),
       farmeely_id: farmeely_id,
-      "joined_users.user_id": user_id,
+      farmeely_status: {
+        $in: [FARMEELY_STATUS.pending, FARMEELY_STATUS.inProgress],
+      },
     });
 
-    if (existingMainJoin) {
-      return res.status(400).json({
-        message:
-          "You have already joined a farmeely group for this product in this city",
-        data: {
-          farmeely_id: existingMainJoin.farmeely_id,
-        },
-      });
+    if (!farmeely) {
+      return res
+        .status(404)
+        .json({ message: "No active farmeely group found" });
     }
 
-    // ========== END DUPLICATE CHECKS ==========
-
-    // First check if there's an active main farmeely
-    let [mainFarmeely] = await findQuery("Farmeely", {
-      product_id: Number(product_id),
-      farmeelt_id: farmeely_id,
-      payment_status: "completed",
-      slot_status: ACTIVE_SLOT_STATUS.active,
-      farmeely_status: FARMEELY_STATUS.inProgress,
-    });
-
-    // If main farmeely exists, handle join directly to main
-    if (mainFarmeely) {
-      return await handleDirectJoinToMain(
-        mainFarmeely,
-        user_id,
-        user_email,
-        number_of_slot,
-        city,
-        res,
-      );
+    // Check if user already joined
+    const alreadyJoined = farmeely.joined_users.some(
+      (u) => u.user_id === user_id,
+    );
+    if (alreadyJoined) {
+      return res
+        .status(400)
+        .json({ message: "You have already joined this farmeely" });
     }
 
-    // If no main farmeely, check staging for pending farmeely
-    const [stagingFarmeely] = await findQuery("FarmeelyStaging", {
-      product_id: Number(product_id),
-      farmeely_id,
-      status: "pending_payment",
-    });
+    // Calculate available slots
+    const confirmedSlots = farmeely.joined_users
+      .filter((u) => u.is_paid)
+      .reduce((sum, u) => sum + u.slots_joined, 0);
 
-    if (!stagingFarmeely) {
-      return res.status(404).json({
-        message:
-          "No active or pending farmeely group found in this city. You can create one!",
-      });
-    }
-
-    // Calculate available slots in staging
-    const creatorSlots = stagingFarmeely.creator.pending_slots;
-    const pendingJoinsTotal =
-      stagingFarmeely.pending_joins?.reduce(
-        (sum, join) => sum + (join.pending_slots || 0),
-        0,
-      ) || 0;
+    const pendingSlotsTotal = farmeely.joined_users
+      .filter((u) => !u.is_paid)
+      .reduce((sum, u) => sum + (u.pending_slots || 0), 0);
 
     const availableSlots =
-      stagingFarmeely.total_slots - (creatorSlots + pendingJoinsTotal);
-
+      farmeely.total_slots - (confirmedSlots + pendingSlotsTotal);
     const slotsToJoin = parseInt(number_of_slot);
 
     if (slotsToJoin <= 0 || slotsToJoin > availableSlots) {
-      return res.status(400).json({
-        message: `Invalid slot amount. Available slots: ${availableSlots}`,
-      });
+      return res
+        .status(400)
+        .json({ message: `Invalid slot amount. Available: ${availableSlots}` });
     }
 
+    // Get delivery fee for their city
     const states = await findQuery("States");
-
     const deliveryFee =
       states
         .flatMap((s) => s.cities)
         .find((c) => c.name.toLowerCase() === city.toLowerCase())
         ?.deliveryFee || 0;
 
-    const amountToPay =
-      slotsToJoin * stagingFarmeely.price_per_slot + deliveryFee;
+    const amountToPay = slotsToJoin * farmeely.price_per_slot + deliveryFee;
 
-    // Add to pending_joins in staging
+    // Add as pending member
     await updateWithOperators(
-      "FarmeelyStaging",
-      { farmeely_id: stagingFarmeely.farmeely_id },
+      "Farmeely",
+      { farmeely_id },
       {
         $push: {
-          pending_joins: {
+          joined_users: {
             user_id,
             user_email,
+            is_creator: false,
+            slots_joined: 0,
             pending_slots: slotsToJoin,
+            amount_paid: 0,
             pending_amount: amountToPay,
             is_paid: false,
-            joined_at: new Date(),
             delivery_city: city,
             delivery_fee: deliveryFee,
+            joined_at: new Date(),
           },
         },
       },
     );
 
-    return res.status(200).json({
+    res.status(200).json({
       status: true,
       message: "Slots reserved. Complete payment to join.",
       data: {
-        farmeely_id: stagingFarmeely.farmeely_id,
-        delivery_fee: DeliveryGee,
+        farmeely_id,
         pending_slots: slotsToJoin,
-        amount: amountToPay,
-        note: "This farmeely is pending creator payment. You'll be added once creator pays.",
+        amount_to_pay: amountToPay,
+        delivery_fee: deliveryFee,
       },
     });
   } catch (err) {
