@@ -63,22 +63,33 @@ const getCategory = async (req, res, next) => {
   try {
     const products = await findQuery("Products", {});
 
+    // Hardcoded descriptions for now (you can move to database later)
+    const categoryDescriptions = {
+      livestock: "Cattle, goats, and other animals",
+      "farm-produce": "Fruits, vegetables, and crops",
+      poultry: "Chicken, turkey, and eggs",
+      fish: "Fresh and frozen seafood",
+      grains: "Rice, beans, and grains",
+      Uncategorized: "Other products",
+    };
+
     // Group products by category
     const categoryMap = new Map();
 
     products.forEach((product) => {
-      const categoryName = product.category;
+      const categoryName = product.category || "Uncategorized";
 
       if (!categoryMap.has(categoryName)) {
         categoryMap.set(categoryName, []);
       }
 
-      // Push the entire product object with ALL its fields
       categoryMap.get(categoryName).push(product);
     });
 
+    // Transform into the format with title and description
     const categories = Array.from(categoryMap, ([title, products]) => ({
       title: title,
+      description: categoryDescriptions[title] || "Various products available",
       products: products,
     }));
 
