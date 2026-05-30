@@ -58,18 +58,40 @@ const updateProduct = async (req, res, next) => {
     next(error);
   }
 };
+
 const getCategory = async (req, res, next) => {
   try {
-      const products = await findQuery("Products", {});
+    const products = await findQuery("Products", {});
 
-      // Extract unique categories
-      const categories = [
-        ...new Set(products.map((product) => product.category)),
-      ];
+    // Group products by category
+    const categoryMap = new Map();
 
-    res.status(201).json({
+    products.forEach((product) => {
+      const categoryName = product.category;
+
+      if (!categoryMap.has(categoryName)) {
+        categoryMap.set(categoryName, []);
+      }
+
+      categoryMap.get(categoryName).push({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        description: product.description,
+        image: product.image,
+        // include any other product fields you need
+      });
+    });
+
+    // Transform into the desired format
+    const categories = Array.from(categoryMap, ([title, products]) => ({
+      title: title,
+      products: products,
+    }));
+
+    res.status(200).json({
       status: true,
-      message: "Categories fetched successfully ",
+      message: "Categories fetched successfully",
       data: categories,
     });
   } catch (error) {
