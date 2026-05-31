@@ -11,8 +11,8 @@ const FarmeelySchema = new mongoose.Schema({
   },
   farmeely_status: {
     type: String,
-    enum: ["in_progress", "group_completed","processing", "completed"],
-    default: "in_progress",
+    enum: ["pending", "in_progress", "group_completed","processing", "completed"],
+    default: "pending",
     required: true,
   },
   slot_id: {

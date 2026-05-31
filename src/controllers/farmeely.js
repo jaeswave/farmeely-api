@@ -379,6 +379,7 @@ try {
     slot_id,
     product_id: Number(product_id),
     product_name: product.product_name,
+    farmeely_status: FARMEELY_STATUS.pending,
     address,
     city,
     expected_date,
@@ -413,21 +414,31 @@ try {
     ],
   });
 
-  res.status(200).json({
-    status: true,
-    message: "Farmeely created. Complete payment to activate.",
-    data: {
-      farmeely_id,
+res.status(200).json({
+  status: true,
+  message: "Farmeely created. Complete payment to activate.",
+  data: {
+    farmeely_id: farmeely_id,
+    amount_to_pay: creatorAmount,
+    
+    // Send breakdown for frontend display
+    breakdown: {
+      product_name: product.product_name,
+      product_price: product.product_price,
+      total_slots: totalSlots,
+      your_slots: creatorSlots,
+      price_per_slot: pricePerSlot,
+      subtotal: pricePerSlot * creatorSlots,
       delivery_fee: deliveryFee,
-      amount_to_pay: creatorAmount,
-    },
-  });
+      total: creatorAmount
+    }
+  }
+});
 } catch (err) {
   next(err);
 }
 };
 
-// Updated joinFarmeely - DIRECT to main with pending status
 const joinFarmeely = async (req, res, next) => {
   const { product_id, farmeely_id } = req.params;
   const { city, number_of_slot } = req.body;
@@ -435,13 +446,11 @@ const joinFarmeely = async (req, res, next) => {
   const user_email = req.params.email;
 
   try {
-    // Find the farmeely (could be pending or active)
+    // Find the farmeely (only active ones)
     const [farmeely] = await findQuery("Farmeely", {
       product_id: Number(product_id),
       farmeely_id: farmeely_id,
-      farmeely_status: {
-        $in: [FARMEELY_STATUS.pending, FARMEELY_STATUS.inProgress],
-      },
+      farmeely_status: FARMEELY_STATUS.inProgress,
     });
 
     if (!farmeely) {
@@ -487,7 +496,17 @@ const joinFarmeely = async (req, res, next) => {
         .find((c) => c.name.toLowerCase() === city.toLowerCase())
         ?.deliveryFee || 0;
 
-    const amountToPay = slotsToJoin * farmeely.price_per_slot + deliveryFee;
+    // Calculate base price per slot from original product price
+    const basePricePerSlot =
+      farmeely.total_product_price / farmeely.total_slots;
+
+    // Add platform fee for joiner
+    const pricePerSlotWithFee = Math.ceil(
+      basePricePerSlot * (1 + PLATFORM_FEE_PERCENT),
+    );
+
+    // Calculate total amount for joiner
+    const amountToPay = slotsToJoin * pricePerSlotWithFee + deliveryFee;
 
     // Add as pending member
     await updateWithOperators(
@@ -520,6 +539,18 @@ const joinFarmeely = async (req, res, next) => {
         pending_slots: slotsToJoin,
         amount_to_pay: amountToPay,
         delivery_fee: deliveryFee,
+        breakdown: {
+          product_name: farmeely.product_name,
+          slots_requested: slotsToJoin,
+          base_price_per_slot: basePricePerSlot,
+          platform_fee_percent: PLATFORM_FEE_PERCENT * 100,
+          platform_fee_amount:
+            basePricePerSlot * PLATFORM_FEE_PERCENT * slotsToJoin,
+          price_per_slot_with_fee: pricePerSlotWithFee,
+          subtotal: slotsToJoin * pricePerSlotWithFee,
+          delivery_fee: deliveryFee,
+          total: amountToPay,
+        },
       },
     });
   } catch (err) {
@@ -531,7 +562,7 @@ const addMoreSlots = async (req, res, next) => {
   const { farmeely_id } = req.params;
   const { additional_slots } = req.body;
   const user_id = req.params.customer_id;
-  console.log("addMore SLots", additional_slots, typeof additional_slots);
+  console.log("addMore Slots", additional_slots, typeof additional_slots);
 
   try {
     const [farmeely] = await findQuery("Farmeely", { farmeely_id });
@@ -591,11 +622,20 @@ const addMoreSlots = async (req, res, next) => {
       });
     }
 
-    const extraAmount = slotsToAdd * Number(farmeely.price_per_slot);
+    // Calculate base price per slot from original product price
+    const basePricePerSlot =
+      farmeely.total_product_price / farmeely.total_slots;
+
+    // Add platform fee for additional slots
+    const pricePerSlotWithFee = Math.ceil(
+      basePricePerSlot * (1 + PLATFORM_FEE_PERCENT),
+    );
+
+    // Calculate extra amount with platform fee
+    const extraAmount = slotsToAdd * pricePerSlotWithFee;
     console.log("Extra amount to pay:", typeof extraAmount, extraAmount);
 
     // Reserve slots temporarily by marking them as pending
-    // DO NOT mark is_paid as false - user is still paid for existing slots
     await updateOne(
       "Farmeely",
       { farmeely_id, "joined_users.user_id": user_id },
@@ -619,8 +659,18 @@ const addMoreSlots = async (req, res, next) => {
         total_slots_after_payment: user.slots_joined + slotsToAdd,
         amount_to_pay: extraAmount,
         user_type: user.is_creator ? "creator" : "member",
-        current_payment_status: "paid", // For existing slots
-        pending_payment_status: "pending", // For additional slots
+        current_payment_status: "paid",
+        pending_payment_status: "pending",
+        breakdown: {
+          additional_slots: slotsToAdd,
+          base_price_per_slot: basePricePerSlot,
+          platform_fee_percent: PLATFORM_FEE_PERCENT * 100,
+          platform_fee_amount:
+            basePricePerSlot * PLATFORM_FEE_PERCENT * slotsToAdd,
+          price_per_slot_with_fee: pricePerSlotWithFee,
+          subtotal: slotsToAdd * pricePerSlotWithFee,
+          total: extraAmount,
+        },
       },
     });
   } catch (err) {
