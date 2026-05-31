@@ -319,124 +319,125 @@ const PLATFORM_FEE_PERCENT = 0.1; // 10%
 //   }
 // };
 
-
-
 const createFarmeely = async (req, res, next) => {
-const { product_id } = req.params;
-const { address, city, number_of_slot, expected_date } = req.body;
-const user_id = req.params.customer_id;
-const user_email = req.params.email;
+  const { product_id } = req.params;
+  const { address, city, number_of_slot, expected_date } = req.body;
+  const user_id = req.params.customer_id;
+  const user_email = req.params.email;
 
-try {
-  const [product] = await findQuery("Products", {
-    product_id: Number(product_id),
-  });
-  if (!product) return res.status(404).json({ message: "Product not found" });
-
-  // DUPLICATE CHECKS
-  const [existingActive] = await findQuery("Farmeely", {
-    product_id: Number(product_id),
-    city: city,
-    "joined_users.user_id": user_id,
-    "joined_users.is_creator": true,
-    farmeely_status: {
-      $in: [FARMEELY_STATUS.pending, FARMEELY_STATUS.inProgress],
-    },
-  });
-
-  if (existingActive) {
-    return res.status(400).json({
-      message: "You already have an active or pending farmeely",
-      data: { farmeely_id: existingActive.farmeely_id },
+  try {
+    const [product] = await findQuery("Products", {
+      product_id: Number(product_id),
     });
-  }
+    if (!product) return res.status(404).json({ message: "Product not found" });
 
-  // Calculate fees
-  const states = await findQuery("States");
-  const normalizedCity = city.toLowerCase();
-  const deliveryFee =
-    states
-      .flatMap((s) => s.cities)
-      .find((c) => c.name.toLowerCase() === normalizedCity)?.deliveryFee ?? 0;
-
-  const totalSlots = product.total_slots;
-  const creatorSlots = parseInt(number_of_slot);
-
-  if (creatorSlots <= 0 || creatorSlots > totalSlots) {
-    return res.status(400).json({ message: "Invalid slot count" });
-  }
-
-  const basePricePerSlot = Math.ceil(product.product_price / totalSlots);
-  const pricePerSlot = Math.ceil(basePricePerSlot * (1 + PLATFORM_FEE_PERCENT));
-  const creatorAmount = pricePerSlot * creatorSlots + deliveryFee;
-
-  const farmeely_id = uuidv4();
-  const slot_id = uuidv4();
-
-  // STORE DIRECTLY IN MAIN COLLECTION with pending status
-  await insertOne("Farmeely", {
-    farmeely_id,
-    slot_id,
-    product_id: Number(product_id),
-    product_name: product.product_name,
-    farmeely_status: FARMEELY_STATUS.pending,
-    address,
-    city,
-    expected_date,
-    total_slots: totalSlots,
-    delivery_fee: deliveryFee,
-    slots_available: totalSlots,
-    price_per_slot: pricePerSlot,
-    creator_amount: creatorAmount,
-
-    // Critical: Payment status tracking
-    payment_status: "pending", // 'pending' or 'completed'
-    farmeely_status: FARMEELY_STATUS.pending, // 'pending', 'inProgress', 'groupCompleted'
-    slot_status: ACTIVE_SLOT_STATUS.inactive, // Inactive until creator pays
-
-    created_at: new Date(),
-    expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h to pay
-
-    joined_users: [
-      {
-        user_id,
-        user_email,
-        is_creator: true,
-        slots_joined: 0, // Not confirmed until payment
-        pending_slots: creatorSlots,
-        amount_paid: 0,
-        pending_amount: creatorAmount,
-        is_paid: false,
-        delivery_city: city,
-        delivery_fee: deliveryFee,
-        joined_at: new Date(),
+    // DUPLICATE CHECKS
+    const [existingActive] = await findQuery("Farmeely", {
+      product_id: Number(product_id),
+      city: city,
+      "joined_users.user_id": user_id,
+      "joined_users.is_creator": true,
+      farmeely_status: {
+        $in: [FARMEELY_STATUS.pending, FARMEELY_STATUS.inProgress],
       },
-    ],
-  });
+    });
 
-res.status(200).json({
-  status: true,
-  message: "Farmeely created. Complete payment to activate.",
-  data: {
-    farmeely_id: farmeely_id,
-    amount_to_pay: creatorAmount,
-    
-    // Send breakdown for frontend display
-    breakdown: {
-      product_name: product.product_name,
-      product_price: product.product_price,
-      total_slots: totalSlots,
-      your_slots: creatorSlots,
-      price_per_slot: pricePerSlot,
-      subtotal: pricePerSlot * creatorSlots,
-      delivery_fee: deliveryFee,
-      total: creatorAmount
+    if (existingActive) {
+      return res.status(400).json({
+        message: "You already have an active or pending farmeely",
+        data: { farmeely_id: existingActive.farmeely_id },
+      });
     }
+
+    // Calculate fees
+    const states = await findQuery("States");
+    const normalizedCity = city.toLowerCase();
+    const deliveryFee =
+      states
+        .flatMap((s) => s.cities)
+        .find((c) => c.name.toLowerCase() === normalizedCity)?.deliveryFee ?? 0;
+
+    const totalSlots = product.total_slots;
+    const creatorSlots = parseInt(number_of_slot);
+
+    if (creatorSlots <= 0 || creatorSlots > totalSlots) {
+      return res.status(400).json({ message: "Invalid slot count" });
+    }
+
+    const basePricePerSlot = Math.ceil(product.product_price / totalSlots);
+    const pricePerSlot = Math.ceil(
+      basePricePerSlot * (1 + PLATFORM_FEE_PERCENT),
+    );
+    const creatorAmount = pricePerSlot * creatorSlots + deliveryFee;
+
+    const farmeely_id = uuidv4();
+    const slot_id = uuidv4();
+
+    // STORE DIRECTLY IN MAIN COLLECTION with pending status
+    await insertOne("Farmeely", {
+      farmeely_id,
+      slot_id,
+      product_id: Number(product_id),
+      product_name: product.product_name,
+      farmeely_status: FARMEELY_STATUS.pending,
+      address,
+      city,
+      expected_date,
+      total_slots: totalSlots,
+      delivery_fee: deliveryFee,
+      slots_available: totalSlots,
+      price_per_slot: pricePerSlot,
+      creator_amount: creatorAmount,
+
+      // Critical: Payment status tracking
+      payment_status: "pending", // 'pending' or 'completed'
+      farmeely_status: FARMEELY_STATUS.pending, // 'pending', 'inProgress', 'groupCompleted'
+      slot_status: ACTIVE_SLOT_STATUS.inactive, // Inactive until creator pays
+
+      created_at: new Date(),
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h to pay
+
+      joined_users: [
+        {
+          user_id,
+          user_email,
+          is_creator: true,
+          slots_joined: 0, // Not confirmed until payment
+          pending_slots: creatorSlots,
+          amount_paid: 0,
+          pending_amount: creatorAmount,
+          is_paid: false,
+          delivery_city: city,
+          delivery_fee: deliveryFee,
+          joined_at: new Date(),
+        },
+      ],
+    });
+
+    res.status(200).json({
+      status: true,
+      message: "Farmeely created. Complete payment to activate.",
+      data: {
+        farmeely_id: farmeely_id,
+        amount_to_pay: creatorAmount,
+
+        // Send breakdown for frontend display
+        breakdown: {
+          product_name: product.product_name,
+          product_price: product.product_price,
+          total_slots: totalSlots,
+          your_slots: creatorSlots,
+          price_per_slot: pricePerSlot,
+          platform_fee_percentage: `${PLATFORM_FEE_PERCENT * 100}%`,
+          subtotal: pricePerSlot * creatorSlots,
+          delivery_fee: deliveryFee,
+          total: creatorAmount,
+        },
+      },
+    });
+  } catch (err) {
+    next(err);
   }
-});
-} catch (err) {
-  next(err);
-}
 };
 
 const joinFarmeely = async (req, res, next) => {
