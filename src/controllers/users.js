@@ -361,23 +361,44 @@ const changeCustomersPassword = async (req, res, next) => {
 
 const editProfile = async (req, res, next) => {
   const { customer_id } = req.params;
+  const { fullname } = req.body;
 
   try {
-    // const checkUserData = await findQuery("Users", {
-    //   customer_id: customer_id,
-    // })
+    // Check if they provided a name
+    if (!fullname) {
+      const err = new Error("Please provide a new name");
+      err.status = 400;
+      return next(err);
+    }
 
-    // if (checkUserData[0].lastname === req.body.lastname) {
-    //   const err = new Error("The previous name is the same as the current name")
-    //   err.status = 400
-    //   return next(err)
-    // }
+    // Check if user exists
+    const checkUserData = await findQuery("Users", {
+      customer_id: customer_id,
+    });
 
-    await updateWithOperators("Users", { customer_id: customer_id }, req.body);
+    if (!checkUserData || checkUserData.length === 0) {
+      const err = new Error("User not found");
+      err.status = 404;
+      return next(err);
+    }
+
+    // Check if new name is same as old name
+    if (checkUserData[0].fullname === fullname) {
+      const err = new Error("New name is the same as current name");
+      err.status = 400;
+      return next(err);
+    }
+
+    // Update only the name
+    await updateWithOperators(
+      "Users",
+      { customer_id: customer_id },
+      { fullname: fullname },
+    );
 
     res.status(200).send({
       status: true,
-      message: "Your Profile details has been updated successfully.",
+      message: "Your name has been updated successfully.",
     });
   } catch (error) {
     next(error);
