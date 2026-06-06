@@ -400,11 +400,12 @@ const initializePayment = async (req, res) => {
 };
 
 // ========== UPDATED verifyPayment (checks DB first, then Paystack) ==========
+// ========== COMPLETE VERIFY PAYMENT ==========
 const verifyPayment = async (req, res) => {
   const { reference } = req.params;
 
   try {
-    // STEP 1: Check if reference exists in database
+    // STEP 1: Find the transaction
     const [transaction] = await findQuery("Transaction", { reference });
     
     if (!transaction) {
@@ -442,7 +443,6 @@ const verifyPayment = async (req, res) => {
     const response = await completePayment(reference);
     
     if (response.data.data.status !== "success") {
-      // Update transaction as failed
       await updateOne("Transaction", { reference }, {
         $set: {
           transaction_status: "failed",
@@ -459,8 +459,8 @@ const verifyPayment = async (req, res) => {
       });
     }
 
-    // STEP 5: Verify amount matches (security check)
-    const verifiedAmount = response.data.data.amount / 100; // Convert from kobo
+    // STEP 5: Verify amount matches
+    const verifiedAmount = response.data.data.amount / 100;
     if (verifiedAmount !== transaction.amount) {
       await updateOne("Transaction", { reference }, {
         $set: {
@@ -476,46 +476,138 @@ const verifyPayment = async (req, res) => {
       });
     }
 
-    // STEP 6: Update the farmeely based on payment type
-    const { farmeely_id, customer_id, metadata } = transaction;
-    
-    const [farmeely] = await findQuery("Farmeely", { farmeely_id });
+    // STEP 6: Get farmeely and user
+    const [farmeely] = await findQuery("Farmeely", { farmeely_id: transaction.farmeely_id });
     if (!farmeely) {
       throw new Error("Farmeely not found");
     }
 
-    const user = farmeely.joined_users[metadata.user_index];
-    if (!user || user.is_paid) {
-      throw new Error("User already paid or not found");
+    const userIndex = farmeely.joined_users.findIndex(u => u.user_id === transaction.customer_id);
+    if (userIndex === -1) {
+      throw new Error("User not found in farmeely");
     }
 
-    // Update user as paid
-    const updateOps = {
-      $set: {
-        [`joined_users.${metadata.user_index}.is_paid`]: true,
-        [`joined_users.${metadata.user_index}.slots_joined`]: user.pending_slots,
-        [`joined_users.${metadata.user_index}.amount_paid`]: user.pending_amount,
-        [`joined_users.${metadata.user_index}.pending_slots`]: 0,
-        [`joined_users.${metadata.user_index}.pending_amount`]: 0,
-        [`joined_users.${metadata.user_index}.paid_at`]: new Date(),
-        [`joined_users.${metadata.user_index}.payment_reference`]: reference
-      },
-      $inc: {
-        slots_available: -user.pending_slots
+    const user = farmeely.joined_users[userIndex];
+    
+    // STEP 7: Determine payment type and prepare updates
+    const isAdditionalPayment = user.has_pending_addition === true;
+    let updateOps = {};
+    let statusChanged = false;
+    let newFarmeelyStatus = farmeely.farmeely_status;
+    let newSlotStatus = farmeely.slot_status;
+
+    if (isAdditionalPayment) {
+      // ========== HANDLE ADDITIONAL SLOTS PAYMENT ==========
+      console.log(`Processing additional slots payment for user ${transaction.customer_id}`);
+      
+      const newSlotsJoined = user.slots_joined + user.pending_additional_slots;
+      const newOwnershipPercentage = user.ownership_percentage + (user.pending_additional_ownership || 0);
+      const newAmountPaid = user.amount_paid + user.pending_additional_amount;
+      
+      updateOps = {
+        $set: {
+          [`joined_users.${userIndex}.slots_joined`]: newSlotsJoined,
+          [`joined_users.${userIndex}.amount_paid`]: newAmountPaid,
+          [`joined_users.${userIndex}.ownership_percentage`]: newOwnershipPercentage,
+          [`joined_users.${userIndex}.fee_percentage_charged`]: user.fee_percentage_charged, // Keep original
+          [`joined_users.${userIndex}.pending_additional_slots`]: 0,
+          [`joined_users.${userIndex}.pending_additional_amount`]: 0,
+          [`joined_users.${userIndex}.pending_additional_fee_percentage`]: 0,
+          [`joined_users.${userIndex}.pending_additional_ownership`]: 0,
+          [`joined_users.${userIndex}.has_pending_addition`]: false,
+          [`joined_users.${userIndex}.is_paid`]: true,
+          [`joined_users.${userIndex}.payment_reference`]: reference,
+          [`joined_users.${userIndex}.paid_at`]: new Date(),
+        }
+      };
+      
+      console.log(`✅ User ${transaction.customer_id} added ${user.pending_additional_slots} more slots`);
+      
+    } else {
+      // ========== HANDLE INITIAL PAYMENT (Creator or Joiner) ==========
+      console.log(`Processing initial payment for user ${transaction.customer_id}`);
+      
+      const newSlotsJoined = user.pending_slots;
+      const newAmountPaid = user.pending_amount;
+      
+      updateOps = {
+        $set: {
+          [`joined_users.${userIndex}.slots_joined`]: newSlotsJoined,
+          [`joined_users.${userIndex}.amount_paid`]: newAmountPaid,
+          [`joined_users.${userIndex}.pending_slots`]: 0,
+          [`joined_users.${userIndex}.pending_amount`]: 0,
+          [`joined_users.${userIndex}.is_paid`]: true,
+          [`joined_users.${userIndex}.payment_reference`]: reference,
+          [`joined_users.${userIndex}.paid_at`]: new Date(),
+        }
+      };
+      
+      // CRITICAL: If this is the CREATOR paying for the first time
+      // Transition farmeely from 'pending' to 'inProgress'
+      if (user.is_creator === true) {
+        console.log(`🎉 CREATOR PAID! Activating farmeely ${transaction.farmeely_id}`);
+        
+        newFarmeelyStatus = FARMEELY_STATUS.inProgress;
+        newSlotStatus = ACTIVE_SLOT_STATUS.active;
+        
+        updateOps.$set.farmeely_status = newFarmeelyStatus;
+        updateOps.$set.slot_status = newSlotStatus;
+        updateOps.$set.payment_status = "completed";
+        updateOps.$set.activated_at = new Date();
+        
+        statusChanged = true;
       }
-    };
-
-    // If this is creator payment, activate the farmeely
-    if (metadata.user_type === 'creator') {
-      updateOps.$set.farmeely_status = FARMEELY_STATUS.inProgress;
-      updateOps.$set.slot_status = ACTIVE_SLOT_STATUS.active;
-      updateOps.$set.payment_status = "completed";
-      updateOps.$set.activated_at = new Date();
     }
 
-    await updateOne("Farmeely", { farmeely_id }, updateOps);
+    // STEP 8: Apply updates to farmeely
+    await updateOne("Farmeely", { farmeely_id: transaction.farmeely_id }, updateOps);
 
-    // Update transaction as completed
+    // STEP 9: Check if farmeely is now fully booked or completed
+    const [updatedFarmeely] = await findQuery("Farmeely", { farmeely_id: transaction.farmeely_id });
+    
+    // Calculate confirmed slots (all paid users)
+    const confirmedSlots = updatedFarmeely.joined_users
+      .filter(u => u.is_paid === true)
+      .reduce((sum, u) => sum + u.slots_joined, 0);
+    
+    const totalSlots = updatedFarmeely.total_slots;
+    const isFullyBooked = confirmedSlots === totalSlots;
+    const hasAvailableSlots = updatedFarmeely.slots_available > 0;
+    
+    // STEP 10: Update status based on completion
+    let completionStatus = {};
+    
+    if (isFullyBooked) {
+      console.log(`🎉 Farmeely ${transaction.farmeely_id} is now FULLY BOOKED and COMPLETED!`);
+      
+      completionStatus = {
+        farmeely_status: FARMEELY_STATUS.completed,
+        slot_status: ACTIVE_SLOT_STATUS.completed,
+        completed_at: new Date()
+      };
+      
+      await updateOne("Farmeely", { farmeely_id: transaction.farmeely_id }, {
+        $set: completionStatus
+      });
+      
+      newFarmeelyStatus = FARMEELY_STATUS.completed;
+      newSlotStatus = ACTIVE_SLOT_STATUS.completed;
+      
+    } else if (!hasAvailableSlots && !isFullyBooked) {
+      // All slots reserved but not all paid yet
+      console.log(`📝 Farmeely ${transaction.farmeely_id} is fully booked but waiting for payments`);
+      
+      completionStatus = {
+        slot_status: ACTIVE_SLOT_STATUS.fullyBooked,
+        farmeely_status: FARMEELY_STATUS.fullyBooked
+      };
+      
+      await updateOne("Farmeely", { farmeely_id: transaction.farmeely_id }, {
+        $set: completionStatus
+      });
+    }
+
+    // STEP 11: Update transaction as completed
     await updateOne("Transaction", { reference }, {
       $set: {
         transaction_status: "completed",
@@ -524,25 +616,45 @@ const verifyPayment = async (req, res) => {
       }
     });
 
-    // Check if farmeely is fully booked
-    const [updatedFarmeely] = await findQuery("Farmeely", { farmeely_id });
-    if (updatedFarmeely.slots_available === 0) {
-      await updateOne("Farmeely", { farmeely_id }, {
-        $set: { slot_status: ACTIVE_SLOT_STATUS.inactive }
-      });
-    }
-
-    res.status(200).json({
+    // STEP 12: Prepare response
+    const responseData = {
       status: true,
       message: "Payment verified successfully",
       data: {
-        farmeely_id,
-        reference,
+        farmeely_id: transaction.farmeely_id,
+        reference: reference,
         amount: transaction.amount,
-        payment_type: transaction.payment_type,
-        verified_at: new Date()
+        payment_type: isAdditionalPayment ? "additional_slots" : (user.is_creator ? "creator_initial" : "joiner_initial"),
+        verified_at: new Date(),
+        
+        // User updates
+        user_update: {
+          slots_joined: isAdditionalPayment ? user.slots_joined + user.pending_additional_slots : user.pending_slots,
+          ownership_percentage: isAdditionalPayment ? user.ownership_percentage + (user.pending_additional_ownership || 0) : user.ownership_percentage,
+          amount_paid: transaction.amount,
+          is_paid: true
+        }
       }
-    });
+    };
+
+    // Add status change info if applicable
+    if (statusChanged) {
+      responseData.data.status_change = {
+        from: farmeely.farmeely_status,
+        to: newFarmeelyStatus,
+        message: "Farmeely has been activated! Others can now join."
+      };
+    }
+    
+    if (isFullyBooked) {
+      responseData.data.completion = {
+        message: "Congratulations! All slots have been paid for. The farmeely is now complete.",
+        completed_at: new Date()
+      };
+    }
+
+    res.status(200).json(responseData);
+    
   } catch (err) {
     console.error("Payment verification error:", err);
     
@@ -562,6 +674,64 @@ const verifyPayment = async (req, res) => {
       message: "Payment verification failed",
       error: err.message
     });
+  }
+};
+
+// ========== HELPER: GET FARMEELY WITH COMPLETE STATUS ==========
+const getFarmeelyWithStatus = async (req, res, next) => {
+  const { farmeely_id } = req.params;
+  
+  try {
+    const [farmeely] = await findQuery("Farmeely", { farmeely_id });
+    
+    if (!farmeely) {
+      return res.status(404).json({ message: "Farmeely not found" });
+    }
+    
+    // Calculate current status
+    const confirmedSlots = farmeely.joined_users
+      .filter(u => u.is_paid)
+      .reduce((sum, u) => sum + u.slots_joined, 0);
+    
+    const pendingSlots = farmeely.joined_users
+      .filter(u => !u.is_paid)
+      .reduce((sum, u) => sum + (u.pending_slots || 0), 0);
+    
+    const totalSlots = farmeely.total_slots;
+    const availableSlots = farmeely.slots_available;
+    
+    const status = {
+      farmeely_id: farmeely.farmeely_id,
+      product_name: farmeely.product_name,
+      farmeely_status: farmeely.farmeely_status,
+      slot_status: farmeely.slot_status,
+      
+      slots: {
+        total: totalSlots,
+        confirmed: confirmedSlots,
+        pending: pendingSlots,
+        available: availableSlots,
+        percentage_complete: (confirmedSlots / totalSlots) * 100
+      },
+      
+      users: {
+        total_joined: farmeely.joined_users.length,
+        paid_count: farmeely.joined_users.filter(u => u.is_paid).length,
+        pending_count: farmeely.joined_users.filter(u => !u.is_paid).length
+      },
+      
+      is_active: farmeely.farmeely_status === FARMEELY_STATUS.inProgress,
+      is_completed: farmeely.farmeely_status === FARMEELY_STATUS.completed,
+      is_fully_booked: farmeely.farmeely_status === FARMEELY_STATUS.fullyBooked,
+      can_join: farmeely.farmeely_status === FARMEELY_STATUS.inProgress && availableSlots > 0
+    };
+    
+    res.status(200).json({
+      status: true,
+      data: status
+    });
+  } catch (err) {
+    next(err);
   }
 };
 
