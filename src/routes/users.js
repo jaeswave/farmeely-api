@@ -55,7 +55,6 @@ router.patch(
 router.patch(
   "/user/edit-profile",
   authorization,
-  // validationMiddleware(validationData.edit),
   editProfile,
 );
 

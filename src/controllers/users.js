@@ -360,12 +360,12 @@ const changeCustomersPassword = async (req, res, next) => {
 };
 
 const editProfile = async (req, res, next) => {
-  const { customer_id } = req.params;
+  const customer_id = req.params.customer_id; // or req.user.customer_id
   const { fullname } = req.body;
 
   try {
     // Check if they provided a name
-    if (!fullname) {
+    if (!fullname || fullname.trim() === "") {
       const err = new Error("Please provide a new name");
       err.status = 400;
       return next(err);
@@ -389,11 +389,11 @@ const editProfile = async (req, res, next) => {
       return next(err);
     }
 
-    // Update only the name
+    // Update only the name with $set operator
     await updateWithOperators(
       "Users",
       { customer_id: customer_id },
-      { fullname: fullname },
+      { $set: { fullname: fullname } },  // ✅ FIXED: added $set
     );
 
     res.status(200).send({
