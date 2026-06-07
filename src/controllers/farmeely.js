@@ -1505,7 +1505,7 @@ const getFeaturedFarmeelyByCity = async (req, res, next) => {
 
 const getAllCities = async (req, res, next) => {
   try {
-    const states = await State.find({});
+    const states = await findQuery("State", {});
     const allCities = states.flatMap((state) =>
       state.cities.map((city) => city.name),
     );
