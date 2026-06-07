@@ -701,9 +701,6 @@ const createFarmeely = async (req, res, next) => {
   }
 };
 
-
-
-
 // ========== JOIN FARMEELY ==========
 const joinFarmeely = async (req, res, next) => {
   const { product_id, farmeely_id } = req.params;
@@ -720,8 +717,9 @@ const joinFarmeely = async (req, res, next) => {
     });
 
     if (!farmeely) {
-      return res.status(404).json({ 
-        message: "No active farmeely group found. Creator must complete payment first." 
+      return res.status(404).json({
+        message:
+          "No active farmeely group found. Creator must complete payment first.",
       });
     }
 
@@ -730,8 +728,8 @@ const joinFarmeely = async (req, res, next) => {
       (u) => u.user_id === user_id,
     );
     if (alreadyJoined) {
-      return res.status(400).json({ 
-        message: "You have already joined this farmeely" 
+      return res.status(400).json({
+        message: "You have already joined this farmeely",
       });
     }
 
@@ -740,8 +738,8 @@ const joinFarmeely = async (req, res, next) => {
     const availableSlots = farmeely.slots_available;
 
     if (slotsToJoin <= 0 || slotsToJoin > availableSlots) {
-      return res.status(400).json({ 
-        message: `Invalid slot amount. Available: ${availableSlots}` 
+      return res.status(400).json({
+        message: `Invalid slot amount. Available: ${availableSlots}`,
       });
     }
 
@@ -751,31 +749,37 @@ const joinFarmeely = async (req, res, next) => {
     const cityData = states
       .flatMap((s) => s.cities)
       .find((c) => c.name.toLowerCase() === normalizedCity);
-    
+
     const deliveryFee = cityData?.deliveryFee ?? 0;
 
     // ========== CALCULATIONS (Same pattern as create) ==========
-    
+
     // 1. Base price per slot (from farmeely)
     const basePricePerSlot = farmeely.base_price_per_slot;
-    
+
     // 2. FEE PERCENTAGE: Each slot adds product.percentage (10%) fee
     const feePercentagePerSlot = farmeely.fee_percentage_per_slot; // 10% fee per slot
     const totalFeePercentage = feePercentagePerSlot * slotsToJoin; // 10% × 2 = 20% fee
-    
+
     // 3. OWNERSHIP PERCENTAGE: Based on slots out of total slots
     const ownershipPercentage = (slotsToJoin / farmeely.total_slots) * 100; // (2/20) × 100 = 10% ownership
-    
+
     // 4. Calculate amounts
     const baseSubtotal = basePricePerSlot * slotsToJoin;
-    const percentageFeeAmount = Math.ceil(baseSubtotal * (totalFeePercentage / 100));
+    const percentageFeeAmount = Math.ceil(
+      baseSubtotal * (totalFeePercentage / 100),
+    );
     const amountToPay = baseSubtotal + percentageFeeAmount + deliveryFee;
-    
+
     // Log for debugging
     console.log(`=== JOINER CALCULATION ===`);
     console.log(`Slots joining: ${slotsToJoin} of ${farmeely.total_slots}`);
-    console.log(`Fee percentage: ${feePercentagePerSlot}% per slot = ${totalFeePercentage}% total fee`);
-    console.log(`Ownership percentage: ${ownershipPercentage}% (${slotsToJoin}/${farmeely.total_slots} slots)`);
+    console.log(
+      `Fee percentage: ${feePercentagePerSlot}% per slot = ${totalFeePercentage}% total fee`,
+    );
+    console.log(
+      `Ownership percentage: ${ownershipPercentage}% (${slotsToJoin}/${farmeely.total_slots} slots)`,
+    );
     console.log(`Base subtotal: ${baseSubtotal}`);
     console.log(`Fee amount (${totalFeePercentage}%): ${percentageFeeAmount}`);
     console.log(`Delivery fee: ${deliveryFee}`);
@@ -795,36 +799,36 @@ const joinFarmeely = async (req, res, next) => {
             user_id,
             user_email,
             is_creator: false,
-            
+
             // Slot tracking
             slots_joined: 0,
             pending_slots: slotsToJoin,
-            
+
             // Payment tracking
             amount_paid: 0,
             pending_amount: amountToPay,
             is_paid: false,
-            
+
             // Percentage tracking (separate fee vs ownership)
             fee_percentage_charged: totalFeePercentage,
             ownership_percentage: ownershipPercentage,
-            
+
             // Fee breakdown for this user
             user_fee_breakdown: {
               base_amount: baseSubtotal,
               fee_percentage: totalFeePercentage,
               fee_amount: percentageFeeAmount,
               delivery_fee: deliveryFee,
-              total: amountToPay
+              total: amountToPay,
             },
-            
+
             // Delivery
             delivery_city: city,
             delivery_fee: deliveryFee,
-            
+
             // Timestamps
             joined_at: new Date(),
-            
+
             // Additional slots tracking
             pending_additional_slots: 0,
             pending_additional_amount: 0,
@@ -834,15 +838,15 @@ const joinFarmeely = async (req, res, next) => {
           },
         },
         $inc: {
-          slots_available: -slotsToJoin // Decrease available slots
+          slots_available: -slotsToJoin, // Decrease available slots
         },
         $set: {
           // If fully booked, update slot status
-          ...(isFullyBooked && { 
+          ...(isFullyBooked && {
             slot_status: ACTIVE_SLOT_STATUS.fullyBooked,
-            farmeely_status: FARMEELY_STATUS.fullyBooked
-          })
-        }
+            farmeely_status: FARMEELY_STATUS.fullyBooked,
+          }),
+        },
       },
     );
 
@@ -854,22 +858,22 @@ const joinFarmeely = async (req, res, next) => {
 
     res.status(200).json({
       status: true,
-      message: isFullyBooked 
-        ? "You took the last slots! Group is now fully booked." 
+      message: isFullyBooked
+        ? "You took the last slots! Group is now fully booked."
         : "Slots reserved. Complete payment to join.",
       data: {
         farmeely_id: farmeely_id,
         pending_slots: slotsToJoin,
         amount_to_pay: amountToPay,
-        
+
         // Percentages breakdown
         percentages: {
           fee_per_slot: feePercentagePerSlot,
           total_fee_percentage: totalFeePercentage,
           ownership_percentage: ownershipPercentage,
-          slots_breakdown: `${slotsToJoin} of ${farmeely.total_slots} slots (${ownershipPercentage}% ownership)`
+          slots_breakdown: `${slotsToJoin} of ${farmeely.total_slots} slots (${ownershipPercentage}% ownership)`,
         },
-        
+
         // Financial breakdown
         financial_breakdown: {
           product_name: farmeely.product_name,
@@ -880,16 +884,16 @@ const joinFarmeely = async (req, res, next) => {
           fee_amount: percentageFeeAmount,
           delivery_fee: deliveryFee,
           total: amountToPay,
-          calculation: `${baseSubtotal} + ${percentageFeeAmount} (${totalFeePercentage}% fee) + ${deliveryFee} = ${amountToPay}`
+          calculation: `${baseSubtotal} + ${percentageFeeAmount} (${totalFeePercentage}% fee) + ${deliveryFee} = ${amountToPay}`,
         },
-        
+
         // Group status after join
         group_status: {
           slots_remaining: newSlotsAvailable,
           is_fully_booked: isFullyBooked,
           farmeely_status: isFullyBooked ? "fullyBooked" : "inProgress",
-          slot_status: isFullyBooked ? "fullyBooked" : "active"
-        }
+          slot_status: isFullyBooked ? "fullyBooked" : "active",
+        },
       },
     });
   } catch (err) {
@@ -926,9 +930,13 @@ const addMoreSlots = async (req, res, next) => {
     }
 
     // Find the user
-    const userIndex = farmeely.joined_users.findIndex((u) => u.user_id === user_id);
+    const userIndex = farmeely.joined_users.findIndex(
+      (u) => u.user_id === user_id,
+    );
     if (userIndex === -1) {
-      return res.status(403).json({ message: "You are not part of this farmeely" });
+      return res
+        .status(403)
+        .json({ message: "You are not part of this farmeely" });
     }
 
     const user = farmeely.joined_users[userIndex];
@@ -943,7 +951,8 @@ const addMoreSlots = async (req, res, next) => {
     // Check if user already has pending additional slots
     if (user.has_pending_addition) {
       return res.status(400).json({
-        message: "You already have pending slot additions. Complete that payment first.",
+        message:
+          "You already have pending slot additions. Complete that payment first.",
       });
     }
 
@@ -964,11 +973,13 @@ const addMoreSlots = async (req, res, next) => {
     const feePercentagePerSlot = farmeely.fee_percentage_per_slot; // 10% fee per slot
     const totalFeePercentage = feePercentagePerSlot * slotsToAdd;
     const additionalOwnership = (slotsToAdd / farmeely.total_slots) * 100;
-    
+
     const baseSubtotal = basePricePerSlot * slotsToAdd;
-    const percentageFeeAmount = Math.ceil(baseSubtotal * (totalFeePercentage / 100));
+    const percentageFeeAmount = Math.ceil(
+      baseSubtotal * (totalFeePercentage / 100),
+    );
     const extraAmount = baseSubtotal + percentageFeeAmount; // No delivery fee for additional slots
-    
+
     const newTotalSlots = user.slots_joined + slotsToAdd;
     const newTotalOwnership = (newTotalSlots / farmeely.total_slots) * 100;
     const newSlotsAvailable = farmeely.slots_available - slotsToAdd;
@@ -982,59 +993,61 @@ const addMoreSlots = async (req, res, next) => {
         $set: {
           [`joined_users.${userIndex}.pending_additional_slots`]: slotsToAdd,
           [`joined_users.${userIndex}.pending_additional_amount`]: extraAmount,
-          [`joined_users.${userIndex}.pending_additional_fee_percentage`]: totalFeePercentage,
-          [`joined_users.${userIndex}.pending_additional_ownership`]: additionalOwnership,
+          [`joined_users.${userIndex}.pending_additional_fee_percentage`]:
+            totalFeePercentage,
+          [`joined_users.${userIndex}.pending_additional_ownership`]:
+            additionalOwnership,
           [`joined_users.${userIndex}.has_pending_addition`]: true,
         },
         $inc: {
-          slots_available: -slotsToAdd
+          slots_available: -slotsToAdd,
         },
         $set: {
-          ...(willBeFullyBooked && { 
+          ...(willBeFullyBooked && {
             slot_status: ACTIVE_SLOT_STATUS.fullyBooked,
-            farmeely_status: FARMEELY_STATUS.fullyBooked
-          })
-        }
+            farmeely_status: FARMEELY_STATUS.fullyBooked,
+          }),
+        },
       },
     );
 
     return res.status(200).json({
       status: true,
-      message: willBeFullyBooked 
-        ? "Additional slots reserved! This will complete the group." 
+      message: willBeFullyBooked
+        ? "Additional slots reserved! This will complete the group."
         : "Additional slots reserved. Please complete payment.",
       data: {
         payment_type: "add_slots",
         farmeely_id: farmeely.farmeely_id,
-        
+
         // Current vs new
         current: {
           slots: user.slots_joined,
           ownership: user.ownership_percentage,
-          amount_paid: user.amount_paid
+          amount_paid: user.amount_paid,
         },
-        
+
         pending: {
           additional_slots: slotsToAdd,
           additional_fee_percentage: totalFeePercentage,
           additional_ownership: additionalOwnership,
-          amount_to_pay: extraAmount
+          amount_to_pay: extraAmount,
         },
-        
+
         after_payment: {
           total_slots: newTotalSlots,
           total_ownership: newTotalOwnership,
-          total_amount: user.amount_paid + extraAmount
+          total_amount: user.amount_paid + extraAmount,
         },
-        
+
         // Percentages breakdown
         percentages: {
           fee_per_slot: feePercentagePerSlot,
           total_fee_percentage: totalFeePercentage,
           ownership_gain: additionalOwnership,
-          total_ownership: newTotalOwnership
+          total_ownership: newTotalOwnership,
         },
-        
+
         // Financial breakdown
         financial_breakdown: {
           additional_slots: slotsToAdd,
@@ -1043,14 +1056,14 @@ const addMoreSlots = async (req, res, next) => {
           fee_percentage_applied: `${totalFeePercentage}%`,
           fee_amount: percentageFeeAmount,
           total: extraAmount,
-          calculation: `${baseSubtotal} + ${percentageFeeAmount} (${totalFeePercentage}% fee) = ${extraAmount}`
+          calculation: `${baseSubtotal} + ${percentageFeeAmount} (${totalFeePercentage}% fee) = ${extraAmount}`,
         },
-        
+
         group_status: {
           slots_remaining: newSlotsAvailable,
           will_be_fully_booked: willBeFullyBooked,
-          farmeely_status: willBeFullyBooked ? "fullyBooked" : "inProgress"
-        }
+          farmeely_status: willBeFullyBooked ? "fullyBooked" : "inProgress",
+        },
       },
     });
   } catch (err) {
@@ -1062,21 +1075,21 @@ const addMoreSlots = async (req, res, next) => {
 // ========== CHECK SLOT COMPLETION/STATUS HELPER ==========
 const checkFarmeelyCompletion = async (farmeely_id) => {
   const [farmeely] = await findQuery("Farmeely", { farmeely_id });
-  
+
   if (!farmeely) return null;
-  
+
   const totalSlots = farmeely.total_slots;
   const confirmedSlots = farmeely.joined_users
-    .filter(u => u.is_paid)
+    .filter((u) => u.is_paid)
     .reduce((sum, u) => sum + u.slots_joined, 0);
-  
+
   const pendingSlots = farmeely.joined_users
-    .filter(u => !u.is_paid)
+    .filter((u) => !u.is_paid)
     .reduce((sum, u) => sum + (u.pending_slots || 0), 0);
-  
+
   const availableSlots = farmeely.slots_available;
   const totalReservedOrBooked = confirmedSlots + pendingSlots;
-  
+
   const status = {
     farmeely_id,
     total_slots: totalSlots,
@@ -1088,46 +1101,51 @@ const checkFarmeelyCompletion = async (farmeely_id) => {
     is_fully_booked: totalReservedOrBooked === totalSlots,
     percentage_complete: (confirmedSlots / totalSlots) * 100,
     farmeely_status: farmeely.farmeely_status,
-    slot_status: farmeely.slot_status
+    slot_status: farmeely.slot_status,
   };
-  
+
   // Auto-update status if completed
-  if (confirmedSlots === totalSlots && farmeely.farmeely_status !== FARMEELY_STATUS.completed) {
-    await updateOne("Farmeely", { farmeely_id }, {
-      $set: {
-        farmeely_status: FARMEELY_STATUS.completed,
-        slot_status: ACTIVE_SLOT_STATUS.completed,
-        completed_at: new Date()
-      }
-    });
+  if (
+    confirmedSlots === totalSlots &&
+    farmeely.farmeely_status !== FARMEELY_STATUS.completed
+  ) {
+    await updateOne(
+      "Farmeely",
+      { farmeely_id },
+      {
+        $set: {
+          farmeely_status: FARMEELY_STATUS.completed,
+          slot_status: ACTIVE_SLOT_STATUS.completed,
+          completed_at: new Date(),
+        },
+      },
+    );
     status.farmeely_status = FARMEELY_STATUS.completed;
     status.slot_status = ACTIVE_SLOT_STATUS.completed;
   }
-  
+
   return status;
 };
 
 // ========== GET FARMEELY STATUS ENDPOINT ==========
 const getFarmeelyStatus = async (req, res, next) => {
   const { farmeely_id } = req.params;
-  
+
   try {
     const status = await checkFarmeelyCompletion(farmeely_id);
-    
+
     if (!status) {
       return res.status(404).json({ message: "Farmeely not found" });
     }
-    
+
     res.status(200).json({
       status: true,
-      data: status
+      data: status,
     });
   } catch (err) {
     next(err);
   }
 };
-
-
 
 // const joinFarmeely = async (req, res, next) => {
 //   const { product_id, farmeely_id } = req.params;
@@ -1485,6 +1503,22 @@ const getFeaturedFarmeelyByCity = async (req, res, next) => {
   }
 };
 
+const getAllCities = async (req, res, next) => {
+  try {
+    const states = await State.find({});
+    const allCities = states.flatMap((state) =>
+      state.cities.map((city) => city.name),
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: allCities,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createFarmeely,
   joinFarmeely,
@@ -1493,4 +1527,5 @@ module.exports = {
   getAllFarmeely,
   getFarmeelyOfUser,
   getFeaturedFarmeelyByCity,
+  getAllCities,
 };

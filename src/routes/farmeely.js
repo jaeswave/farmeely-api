@@ -9,6 +9,7 @@ const {
   getAllFarmeely,
   getFarmeelyOfUser,
   getFeaturedFarmeelyByCity,
+  getAllCities
 } = require("../controllers/farmeely");
 const router = express.Router();
 
@@ -23,5 +24,6 @@ router.get("/farmeely/:slot_id", authorization, getSingleFarmeely);
 router.get("/farmeely", authorization, getAllFarmeely);
 router.get("/user/farmeely", authorization, getFarmeelyOfUser);
 router.get("/featured/farmeely", authorization, getFeaturedFarmeelyByCity);
+router.get("/cities", getAllCities);
 
 module.exports = router;
