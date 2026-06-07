@@ -1505,19 +1505,19 @@ const getFeaturedFarmeelyByCity = async (req, res, next) => {
 
 const getAllCities = async (req, res, next) => {
   try {
-    const states = await findQuery("State", {});
-    const allCities = states.flatMap((state) =>
-      state.cities.map((city) => city.name),
-    );
+        const states = await findQuery("States");
+
+
 
     return res.status(200).json({
       success: true,
-      data: allCities,
+      data: states,
     });
   } catch (error) {
     next(error);
   }
 };
+
 
 module.exports = {
   createFarmeely,
