@@ -531,21 +531,21 @@ const createFarmeely = async (req, res, next) => {
 
     // ========== CALCULATIONS ==========
 
+    // ========== CALCULATIONS ==========
+
     // 1. Base price per slot
     const basePricePerSlot = Math.ceil(product.product_price / totalSlots);
 
-    // 2. FEE PERCENTAGE: Each slot adds product.percentage (10%) fee
-    const feePercentagePerSlot = product.percentage; // 10% fee per slot
-    const totalFeePercentage = feePercentagePerSlot * creatorSlots; // 10% × 2 = 20% fee
+    // 2. FEE PERCENTAGE: 10% of the total price for ALL slots you're taking
+    const totalSlotPrice = basePricePerSlot * creatorSlots; // Total price of all slots you're taking
+    const feeAmount = Math.ceil(totalSlotPrice * 0.1); // 10% fee on total slot price
 
     // 3. OWNERSHIP PERCENTAGE: Based on slots out of total slots
-    const ownershipPercentage = (creatorSlots / totalSlots) * 100; // (2/20) × 100 = 10% ownership
+    const ownershipPercentage = (creatorSlots / totalSlots) * 100;
 
     // 4. Calculate amounts
-    const baseSubtotal = basePricePerSlot * creatorSlots;
-    const percentageFeeAmount = Math.ceil(
-      baseSubtotal * (totalFeePercentage / 100),
-    );
+    const baseSubtotal = totalSlotPrice;
+    const percentageFeeAmount = feeAmount; // This is now 10% of total slot price
     const creatorAmount = baseSubtotal + percentageFeeAmount + deliveryFee;
 
     // Log for debugging
@@ -755,20 +755,21 @@ const joinFarmeely = async (req, res, next) => {
     // ========== CALCULATIONS (Same pattern as create) ==========
 
     // 1. Base price per slot (from farmeely)
+    // ========== CALCULATIONS (Same pattern as create) ==========
+
+    // 1. Base price per slot (from farmeely)
     const basePricePerSlot = farmeely.base_price_per_slot;
 
-    // 2. FEE PERCENTAGE: Each slot adds product.percentage (10%) fee
-    const feePercentagePerSlot = farmeely.fee_percentage_per_slot; // 10% fee per slot
-    const totalFeePercentage = feePercentagePerSlot * slotsToJoin; // 10% × 2 = 20% fee
+    // 2. FEE PERCENTAGE: 10% of the total price for ALL slots you're taking
+    const totalSlotPrice = basePricePerSlot * slotsToJoin; // Total price of all slots you're taking
+    const feeAmount = Math.ceil(totalSlotPrice * 0.1); // 10% fee on total slot price
 
     // 3. OWNERSHIP PERCENTAGE: Based on slots out of total slots
-    const ownershipPercentage = (slotsToJoin / farmeely.total_slots) * 100; // (2/20) × 100 = 10% ownership
+    const ownershipPercentage = (slotsToJoin / farmeely.total_slots) * 100;
 
     // 4. Calculate amounts
-    const baseSubtotal = basePricePerSlot * slotsToJoin;
-    const percentageFeeAmount = Math.ceil(
-      baseSubtotal * (totalFeePercentage / 100),
-    );
+    const baseSubtotal = totalSlotPrice;
+    const percentageFeeAmount = feeAmount; // This is now 10% of total slot price
     const amountToPay = baseSubtotal + percentageFeeAmount + deliveryFee;
 
     // Log for debugging
@@ -969,16 +970,17 @@ const addMoreSlots = async (req, res, next) => {
     }
 
     // ========== CALCULATIONS (Same pattern) ==========
+    // ========== CALCULATIONS (Same pattern) ==========
     const basePricePerSlot = farmeely.base_price_per_slot;
-    const feePercentagePerSlot = farmeely.fee_percentage_per_slot; // 10% fee per slot
-    const totalFeePercentage = feePercentagePerSlot * slotsToAdd;
-    const additionalOwnership = (slotsToAdd / farmeely.total_slots) * 100;
 
-    const baseSubtotal = basePricePerSlot * slotsToAdd;
-    const percentageFeeAmount = Math.ceil(
-      baseSubtotal * (totalFeePercentage / 100),
-    );
-    const extraAmount = baseSubtotal + percentageFeeAmount; // No delivery fee for additional slots
+    // 2. FEE PERCENTAGE: 10% of the total price for ADDITIONAL slots
+    const totalSlotPrice = basePricePerSlot * slotsToAdd; // Total price of additional slots
+    const feeAmount = Math.ceil(totalSlotPrice * 0.1); // 10% fee on total slot price
+
+    // 3. Calculate amounts
+    const baseSubtotal = totalSlotPrice;
+    const percentageFeeAmount = feeAmount; // This is now 10% of total slot price
+    const extraAmount = baseSubtotal + percentageFeeAmount; // No delivery fee for additional slotsadditional slots
 
     const newTotalSlots = user.slots_joined + slotsToAdd;
     const newTotalOwnership = (newTotalSlots / farmeely.total_slots) * 100;
@@ -1505,9 +1507,7 @@ const getFeaturedFarmeelyByCity = async (req, res, next) => {
 
 const getAllCities = async (req, res, next) => {
   try {
-        const states = await findQuery("States");
-
-
+    const states = await findQuery("States");
 
     return res.status(200).json({
       success: true,
@@ -1517,7 +1517,6 @@ const getAllCities = async (req, res, next) => {
     next(error);
   }
 };
-
 
 module.exports = {
   createFarmeely,
