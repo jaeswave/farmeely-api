@@ -529,34 +529,35 @@ const createFarmeely = async (req, res, next) => {
       });
     }
 
-    // ========== CALCULATIONS ==========
+    // ========== FIXED CALCULATIONS ==========
 
-    // ========== CALCULATIONS ==========
+    // Define constants
+    const FEE_PERCENTAGE_PER_SLOT = product.percentage || 10; // Default to 10%
+    const TOTAL_FEE_PERCENTAGE = FEE_PERCENTAGE_PER_SLOT; // For creator, it's just the per-slot fee (since they're taking slots)
 
     // 1. Base price per slot
     const basePricePerSlot = Math.ceil(product.product_price / totalSlots);
 
-    // 2. FEE PERCENTAGE: 10% of the total price for ALL slots you're taking
-    const totalSlotPrice = basePricePerSlot * creatorSlots; // Total price of all slots you're taking
-    const feeAmount = Math.ceil(totalSlotPrice * 0.1); // 10% fee on total slot price
+    // 2. Calculate fee (10% of the total slot price)
+    const totalSlotPrice = basePricePerSlot * creatorSlots;
+    const feeAmount = Math.ceil(
+      totalSlotPrice * (FEE_PERCENTAGE_PER_SLOT / 100),
+    );
 
-    // 3. OWNERSHIP PERCENTAGE: Based on slots out of total slots
+    // 3. Ownership percentage
     const ownershipPercentage = (creatorSlots / totalSlots) * 100;
 
-    // 4. Calculate amounts
+    // 4. Total amount creator pays
     const baseSubtotal = totalSlotPrice;
-    const percentageFeeAmount = feeAmount; // This is now 10% of total slot price
-    const creatorAmount = baseSubtotal + percentageFeeAmount + deliveryFee;
+    const creatorAmount = baseSubtotal + feeAmount + deliveryFee;
 
-    // Log for debugging
     console.log(`=== CREATOR CALCULATION ===`);
     console.log(`Slots taken: ${creatorSlots} of ${totalSlots}`);
-  
     console.log(
-      `Ownership percentage: ${ownershipPercentage}% (${creatorSlots}/${totalSlots} slots)`,
+      `Ownership: ${ownershipPercentage}% (${creatorSlots}/${totalSlots} slots)`,
     );
     console.log(`Base subtotal: ${baseSubtotal}`);
-    console.log(`Fee amount (${totalFeePercentage}%): ${percentageFeeAmount}`);
+    console.log(`Fee (${FEE_PERCENTAGE_PER_SLOT}%): ${feeAmount}`);
     console.log(`Delivery fee: ${deliveryFee}`);
     console.log(`TOTAL: ${creatorAmount}`);
 
@@ -573,18 +574,18 @@ const createFarmeely = async (req, res, next) => {
       description: product.description,
       category: product.category,
 
-      // Percentage tracking
-      fee_percentage_per_slot: product.percentage, // 10% fee per slot
-      total_fee_percentage: totalFeePercentage, // 20% total fee for creator
+      // Percentage tracking - FIXED
+      fee_percentage_per_slot: FEE_PERCENTAGE_PER_SLOT,
+      total_fee_percentage: TOTAL_FEE_PERCENTAGE, // Now DEFINED!
 
       // Ownership tracking
       total_slots: totalSlots,
-      ownership_percentage: ownershipPercentage, // 10% ownership for creator
+      ownership_percentage: ownershipPercentage,
 
-      // Status fields
-      farmeely_status: FARMEELY_STATUS.pending,
+      // Status fields - FIXED to 'pending' on create
+      farmeely_status: FARMEELY_STATUS.pending, // ✅ CORRECT - pending until payment
       payment_status: "pending",
-      slot_status: ACTIVE_SLOT_STATUS.inactive,
+      slot_status: ACTIVE_SLOT_STATUS.inactive, // Inactive until payment
 
       // Location and delivery
       address,
@@ -599,14 +600,14 @@ const createFarmeely = async (req, res, next) => {
       base_price_per_slot: basePricePerSlot,
       creator_amount: creatorAmount,
 
-      // Fee breakdown
+      // Fee breakdown - FIXED
       fee_breakdown: {
         base_subtotal: baseSubtotal,
-        fee_percentage_applied: totalFeePercentage,
-        fee_amount: percentageFeeAmount,
+        fee_percentage_applied: FEE_PERCENTAGE_PER_SLOT,
+        fee_amount: feeAmount,
         delivery_fee: deliveryFee,
         total: creatorAmount,
-        calculation_formula: `(${basePricePerSlot} × ${creatorSlots}) + (${baseSubtotal} × ${totalFeePercentage}%) + ${deliveryFee} = ${creatorAmount}`,
+        calculation_formula: `(${basePricePerSlot} × ${creatorSlots}) + (${baseSubtotal} × ${FEE_PERCENTAGE_PER_SLOT}%) + ${deliveryFee} = ${creatorAmount}`,
       },
 
       // Timestamps
@@ -629,15 +630,15 @@ const createFarmeely = async (req, res, next) => {
           pending_amount: creatorAmount,
           is_paid: false,
 
-          // Percentage tracking (separate fee vs ownership)
-          fee_percentage_charged: totalFeePercentage, // 20% fee
-          ownership_percentage: ownershipPercentage, // 10% actual ownership
+          // Percentage tracking - FIXED
+          fee_percentage_charged: FEE_PERCENTAGE_PER_SLOT,
+          ownership_percentage: ownershipPercentage,
 
           // Fee breakdown for this user
           user_fee_breakdown: {
             base_amount: baseSubtotal,
-            fee_percentage: totalFeePercentage,
-            fee_amount: percentageFeeAmount,
+            fee_percentage: FEE_PERCENTAGE_PER_SLOT,
+            fee_amount: feeAmount,
             delivery_fee: deliveryFee,
             total: creatorAmount,
           },
@@ -666,28 +667,26 @@ const createFarmeely = async (req, res, next) => {
       data: {
         farmeely_id: farmeely_id,
         amount_to_pay: creatorAmount,
-        farmeely_status: "pending",
+        farmeely_status: "pending", // ✅ CORRECT
         expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
 
-        // Percentages breakdown
         percentages: {
-          fee_per_slot: product.percentage, // 10%
-          total_fee_percentage: totalFeePercentage, // 20%
-          ownership_percentage: ownershipPercentage, // 10%
+          fee_per_slot: FEE_PERCENTAGE_PER_SLOT,
+          total_fee_percentage: TOTAL_FEE_PERCENTAGE,
+          ownership_percentage: ownershipPercentage,
           slots_breakdown: `${creatorSlots} of ${totalSlots} slots (${ownershipPercentage}% ownership)`,
         },
 
-        // Financial breakdown
         financial_breakdown: {
           product_name: product.product_name,
           your_slots: creatorSlots,
           base_price_per_slot: basePricePerSlot,
           base_subtotal: baseSubtotal,
-          fee_percentage_applied: `${totalFeePercentage}%`,
-          fee_amount: percentageFeeAmount,
+          fee_percentage_applied: `${FEE_PERCENTAGE_PER_SLOT}%`,
+          fee_amount: feeAmount,
           delivery_fee: deliveryFee,
           total: creatorAmount,
-          calculation: `${baseSubtotal} + ${percentageFeeAmount} (${totalFeePercentage}% fee) + ${deliveryFee} = ${creatorAmount}`,
+          calculation: `${baseSubtotal} + ${feeAmount} (${FEE_PERCENTAGE_PER_SLOT}% fee) + ${deliveryFee} = ${creatorAmount}`,
         },
 
         slots_remaining: totalSlots - creatorSlots,
@@ -707,11 +706,11 @@ const joinFarmeely = async (req, res, next) => {
   const user_email = req.params.email;
 
   try {
-    // Find the farmeely (only allow joining if status is 'inProgress')
+    // Find the farmeely - FIXED: Check for 'inProgress' status
     const [farmeely] = await findQuery("Farmeely", {
       product_id: Number(product_id),
       farmeely_id: farmeely_id,
-      farmeely_status: FARMEELY_STATUS.inProgress, // Only active groups
+      farmeely_status: FARMEELY_STATUS.inProgress, // ✅ Only active groups can be joined
     });
 
     if (!farmeely) {
@@ -731,7 +730,6 @@ const joinFarmeely = async (req, res, next) => {
       });
     }
 
-    // Calculate available slots
     const slotsToJoin = parseInt(number_of_slot);
     const availableSlots = farmeely.slots_available;
 
@@ -741,7 +739,7 @@ const joinFarmeely = async (req, res, next) => {
       });
     }
 
-    // Get delivery fee for joiner's city
+    // Get delivery fee
     const states = await findQuery("States");
     const normalizedCity = city.toLowerCase();
     const cityData = states
@@ -750,43 +748,20 @@ const joinFarmeely = async (req, res, next) => {
 
     const deliveryFee = cityData?.deliveryFee ?? 0;
 
-    // ========== CALCULATIONS (Same pattern as create) ==========
-
-    // 1. Base price per slot (from farmeely)
-    // ========== CALCULATIONS (Same pattern as create) ==========
-
-    // 1. Base price per slot (from farmeely)
+    // ========== FIXED CALCULATIONS ==========
     const basePricePerSlot = farmeely.base_price_per_slot;
+    const FEE_PERCENTAGE = farmeely.fee_percentage_per_slot || 10;
 
-    // 2. FEE PERCENTAGE: 10% of the total price for ALL slots you're taking
-    const totalSlotPrice = basePricePerSlot * slotsToJoin; // Total price of all slots you're taking
-    const feeAmount = Math.ceil(totalSlotPrice * 0.1); // 10% fee on total slot price
-
-    // 3. OWNERSHIP PERCENTAGE: Based on slots out of total slots
+    const totalSlotPrice = basePricePerSlot * slotsToJoin;
+    const feeAmount = Math.ceil(totalSlotPrice * (FEE_PERCENTAGE / 100));
     const ownershipPercentage = (slotsToJoin / farmeely.total_slots) * 100;
 
-    // 4. Calculate amounts
     const baseSubtotal = totalSlotPrice;
-    const percentageFeeAmount = feeAmount; // This is now 10% of total slot price
-    const amountToPay = baseSubtotal + percentageFeeAmount + deliveryFee;
+    const amountToPay = baseSubtotal + feeAmount + deliveryFee;
 
-    // Log for debugging
-    console.log(`=== JOINER CALCULATION ===`);
-    console.log(`Slots joining: ${slotsToJoin} of ${farmeely.total_slots}`);
-  
-    console.log(
-      `Ownership percentage: ${ownershipPercentage}% (${slotsToJoin}/${farmeely.total_slots} slots)`,
-    );
-    console.log(`Base subtotal: ${baseSubtotal}`);
-    console.log(`Fee amount (${totalFeePercentage}%): ${percentageFeeAmount}`);
-    console.log(`Delivery fee: ${deliveryFee}`);
-    console.log(`TOTAL: ${amountToPay}`);
-
-    // Calculate new slots available after join
     const newSlotsAvailable = farmeely.slots_available - slotsToJoin;
     const isFullyBooked = newSlotsAvailable === 0;
 
-    // Add as pending member
     await updateWithOperators(
       "Farmeely",
       { farmeely_id },
@@ -796,37 +771,23 @@ const joinFarmeely = async (req, res, next) => {
             user_id,
             user_email,
             is_creator: false,
-
-            // Slot tracking
             slots_joined: 0,
             pending_slots: slotsToJoin,
-
-            // Payment tracking
             amount_paid: 0,
             pending_amount: amountToPay,
             is_paid: false,
-
-            // Percentage tracking (separate fee vs ownership)
-            fee_percentage_charged: totalFeePercentage,
+            fee_percentage_charged: FEE_PERCENTAGE,
             ownership_percentage: ownershipPercentage,
-
-            // Fee breakdown for this user
             user_fee_breakdown: {
               base_amount: baseSubtotal,
-              fee_percentage: totalFeePercentage,
-              fee_amount: percentageFeeAmount,
+              fee_percentage: FEE_PERCENTAGE,
+              fee_amount: feeAmount,
               delivery_fee: deliveryFee,
               total: amountToPay,
             },
-
-            // Delivery
             delivery_city: city,
             delivery_fee: deliveryFee,
-
-            // Timestamps
             joined_at: new Date(),
-
-            // Additional slots tracking
             pending_additional_slots: 0,
             pending_additional_amount: 0,
             pending_additional_fee_percentage: 0,
@@ -835,23 +796,16 @@ const joinFarmeely = async (req, res, next) => {
           },
         },
         $inc: {
-          slots_available: -slotsToJoin, // Decrease available slots
+          slots_available: -slotsToJoin,
         },
         $set: {
-          // If fully booked, update slot status
           ...(isFullyBooked && {
             slot_status: ACTIVE_SLOT_STATUS.fullyBooked,
-            farmeely_status: FARMEELY_STATUS.fullyBooked,
+            farmeely_status: FARMEELY_STATUS.fullyBooked, // ✅ Only when fully booked
           }),
         },
       },
     );
-
-    // If fully booked, also send notification (optional)
-    if (isFullyBooked) {
-      console.log(`🎉 Farmeely ${farmeely_id} is now FULLY BOOKED!`);
-      // You can add notification logic here
-    }
 
     res.status(200).json({
       status: true,
@@ -862,33 +816,25 @@ const joinFarmeely = async (req, res, next) => {
         farmeely_id: farmeely_id,
         pending_slots: slotsToJoin,
         amount_to_pay: amountToPay,
-
-        // Percentages breakdown
         percentages: {
-          total_fee_percentage: totalFeePercentage,
+          total_fee_percentage: FEE_PERCENTAGE,
           ownership_percentage: ownershipPercentage,
           slots_breakdown: `${slotsToJoin} of ${farmeely.total_slots} slots (${ownershipPercentage}% ownership)`,
         },
-
-        // Financial breakdown
         financial_breakdown: {
           product_name: farmeely.product_name,
           slots_requested: slotsToJoin,
           base_price_per_slot: basePricePerSlot,
           base_subtotal: baseSubtotal,
-          fee_percentage_applied: `${totalFeePercentage}%`,
-          fee_amount: percentageFeeAmount,
+          fee_percentage_applied: `${FEE_PERCENTAGE}%`,
+          fee_amount: feeAmount,
           delivery_fee: deliveryFee,
           total: amountToPay,
-          calculation: `${baseSubtotal} + ${percentageFeeAmount} (${totalFeePercentage}% fee) + ${deliveryFee} = ${amountToPay}`,
         },
-
-        // Group status after join
         group_status: {
           slots_remaining: newSlotsAvailable,
           is_fully_booked: isFullyBooked,
           farmeely_status: isFullyBooked ? "fullyBooked" : "inProgress",
-          slot_status: isFullyBooked ? "fullyBooked" : "active",
         },
       },
     });
