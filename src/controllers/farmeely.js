@@ -551,9 +551,7 @@ const createFarmeely = async (req, res, next) => {
     // Log for debugging
     console.log(`=== CREATOR CALCULATION ===`);
     console.log(`Slots taken: ${creatorSlots} of ${totalSlots}`);
-    console.log(
-      `Fee percentage: ${feePercentagePerSlot}% per slot = ${totalFeePercentage}% total fee`,
-    );
+  
     console.log(
       `Ownership percentage: ${ownershipPercentage}% (${creatorSlots}/${totalSlots} slots)`,
     );
@@ -775,9 +773,7 @@ const joinFarmeely = async (req, res, next) => {
     // Log for debugging
     console.log(`=== JOINER CALCULATION ===`);
     console.log(`Slots joining: ${slotsToJoin} of ${farmeely.total_slots}`);
-    console.log(
-      `Fee percentage: ${feePercentagePerSlot}% per slot = ${totalFeePercentage}% total fee`,
-    );
+  
     console.log(
       `Ownership percentage: ${ownershipPercentage}% (${slotsToJoin}/${farmeely.total_slots} slots)`,
     );
@@ -869,7 +865,6 @@ const joinFarmeely = async (req, res, next) => {
 
         // Percentages breakdown
         percentages: {
-          fee_per_slot: feePercentagePerSlot,
           total_fee_percentage: totalFeePercentage,
           ownership_percentage: ownershipPercentage,
           slots_breakdown: `${slotsToJoin} of ${farmeely.total_slots} slots (${ownershipPercentage}% ownership)`,
@@ -1043,9 +1038,7 @@ const addMoreSlots = async (req, res, next) => {
         },
 
         // Percentages breakdown
-        percentages: {
-          fee_per_slot: feePercentagePerSlot,
-          total_fee_percentage: totalFeePercentage,
+        percentages: {          total_fee_percentage: totalFeePercentage,
           ownership_gain: additionalOwnership,
           total_ownership: newTotalOwnership,
         },
