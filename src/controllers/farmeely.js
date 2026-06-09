@@ -1064,7 +1064,7 @@ const addMoreSlots = async (req, res, next) => {
         group_status: {
           slots_remaining: newSlotsAvailable,
           will_be_fully_booked: willBeFullyBooked,
-          farmeely_status: willBeFullyBooked ? "fullyBooked" : "inProgress",
+          farmeely_status: "pending",
         },
       },
     });
