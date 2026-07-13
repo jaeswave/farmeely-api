@@ -910,23 +910,43 @@ const addMoreSlots = async (req, res, next) => {
       });
     }
 
-    // ========== CALCULATIONS (Same pattern) ==========
-    // ========== CALCULATIONS (Same pattern) ==========
+    // ========== FIXED CALCULATIONS (Matching createFarmeely pattern) ==========
+
+    // Get the fee percentage from the farmeely (same as when it was created)
+    const FEE_PERCENTAGE = farmeely.fee_percentage_per_slot || 10; // Default to 10%
+    const TOTAL_FEE_PERCENTAGE = FEE_PERCENTAGE; // For additional slots, it's the same percentage
+
+    // 1. Base price per slot (from the farmeely)
     const basePricePerSlot = farmeely.base_price_per_slot;
 
-    // 2. FEE PERCENTAGE: 10% of the total price for ADDITIONAL slots
-    const totalSlotPrice = basePricePerSlot * slotsToAdd; // Total price of additional slots
-    const feeAmount = Math.ceil(totalSlotPrice * 0.1); // 10% fee on total slot price
+    // 2. Calculate total price for additional slots
+    const totalSlotPrice = basePricePerSlot * slotsToAdd;
 
-    // 3. Calculate amounts
+    // 3. Calculate fee (percentage of the total slot price)
+    const feeAmount = Math.ceil(totalSlotPrice * (FEE_PERCENTAGE / 100));
+
+    // 4. Calculate ownership gain from additional slots
+    const additionalOwnership = (slotsToAdd / farmeely.total_slots) * 100;
+
+    // 5. Total amount to pay (no delivery fee for additional slots)
     const baseSubtotal = totalSlotPrice;
-    const percentageFeeAmount = feeAmount; // This is now 10% of total slot price
-    const extraAmount = baseSubtotal + percentageFeeAmount; // No delivery fee for additional slotsadditional slots
+    const extraAmount = baseSubtotal + feeAmount; // No delivery fee for additional slots
 
+    // 6. Calculate new totals
     const newTotalSlots = user.slots_joined + slotsToAdd;
     const newTotalOwnership = (newTotalSlots / farmeely.total_slots) * 100;
     const newSlotsAvailable = farmeely.slots_available - slotsToAdd;
     const willBeFullyBooked = newSlotsAvailable === 0;
+
+    console.log(`=== ADDITIONAL SLOTS CALCULATION ===`);
+    console.log(`User ID: ${user_id}`);
+    console.log(`Additional slots: ${slotsToAdd}`);
+    console.log(`Fee percentage: ${FEE_PERCENTAGE}%`);
+    console.log(`Base subtotal: ${baseSubtotal}`);
+    console.log(`Fee amount: ${feeAmount}`);
+    console.log(`Total to pay: ${extraAmount}`);
+    console.log(`Ownership gain: ${additionalOwnership}%`);
+    console.log(`New total ownership: ${newTotalOwnership}%`);
 
     // Reserve slots and update pending amounts
     await updateOne(
@@ -937,7 +957,7 @@ const addMoreSlots = async (req, res, next) => {
           [`joined_users.${userIndex}.pending_additional_slots`]: slotsToAdd,
           [`joined_users.${userIndex}.pending_additional_amount`]: extraAmount,
           [`joined_users.${userIndex}.pending_additional_fee_percentage`]:
-            totalFeePercentage,
+            FEE_PERCENTAGE,
           [`joined_users.${userIndex}.pending_additional_ownership`]:
             additionalOwnership,
           [`joined_users.${userIndex}.has_pending_addition`]: true,
@@ -972,7 +992,7 @@ const addMoreSlots = async (req, res, next) => {
 
         pending: {
           additional_slots: slotsToAdd,
-          additional_fee_percentage: totalFeePercentage,
+          additional_fee_percentage: FEE_PERCENTAGE,
           additional_ownership: additionalOwnership,
           amount_to_pay: extraAmount,
         },
@@ -984,7 +1004,9 @@ const addMoreSlots = async (req, res, next) => {
         },
 
         // Percentages breakdown
-        percentages: {          total_fee_percentage: totalFeePercentage,
+        percentages: {
+          fee_percentage: FEE_PERCENTAGE,
+          total_fee_percentage: TOTAL_FEE_PERCENTAGE,
           ownership_gain: additionalOwnership,
           total_ownership: newTotalOwnership,
         },
@@ -994,16 +1016,16 @@ const addMoreSlots = async (req, res, next) => {
           additional_slots: slotsToAdd,
           base_price_per_slot: basePricePerSlot,
           base_subtotal: baseSubtotal,
-          fee_percentage_applied: `${totalFeePercentage}%`,
-          fee_amount: percentageFeeAmount,
+          fee_percentage_applied: `${FEE_PERCENTAGE}%`,
+          fee_amount: feeAmount,
           total: extraAmount,
-          calculation: `${baseSubtotal} + ${percentageFeeAmount} (${totalFeePercentage}% fee) = ${extraAmount}`,
+          calculation: `${baseSubtotal} + ${feeAmount} (${FEE_PERCENTAGE}% fee) = ${extraAmount}`,
         },
 
         group_status: {
           slots_remaining: newSlotsAvailable,
           will_be_fully_booked: willBeFullyBooked,
-          farmeely_status: "pending",
+          farmeely_status: willBeFullyBooked ? "fullyBooked" : "inProgress",
         },
       },
     });
