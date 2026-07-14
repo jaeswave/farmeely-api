@@ -6,11 +6,13 @@ const MINIMUM_FARMEELY_PRICE = {
 const ACTIVE_SLOT_STATUS = {
   active: "active",
   inactive: "closed",
+  fullyBooked: "fully_booked",
 };
 
 const FARMEELY_STATUS = {
   inProgress: "in_progress",
   groupCompleted: "group_completed",
+  fullyBooked: "fully_booked",
   completed: "completed",
 };
 
