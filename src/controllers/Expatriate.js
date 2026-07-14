@@ -58,7 +58,7 @@ const submitCustomRequest = async (req, res, next) => {
       message: "Request submitted successfully",
       data: {
         request_id,
-        status,
+        status: "Request submitted successfully",
       },
     });
   } catch (err) {
