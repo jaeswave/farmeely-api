@@ -89,7 +89,7 @@ const getExpatriate = async (req, res, next) => {
 const getAllCountriesWithStates = async (req, res, next) => {
   try {
     if (!cachedCountries) {
-      const countries = await findQuery("Countries");
+      const countries = await findQuery("Country");
 
       cachedCountries = countries
         .map((country) => ({
