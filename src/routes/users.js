@@ -31,7 +31,7 @@ router.post(
   register,
 );
 
-router.post("/user/login", validationMiddleware(validationData.login), login);
+router.post("/user/login", login);
 
 router.patch("/verify/:otp/:email", verifyOtp);
 

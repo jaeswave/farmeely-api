@@ -7,6 +7,8 @@ const {
 const { messages } = require("../constants/messages");
 const Expatriate = require("../models/Expatriate");
 const REQUEST_STATUS = require("../enums/farmeely");
+const { Country, State } = require("country-state-city");
+let cachedCountries = null;
 
 const { v4: uuidv4 } = require("uuid");
 
@@ -84,7 +86,35 @@ const getExpatriate = async (req, res, next) => {
   }
 };
 
+const getAllCountriesWithStates = (req, res) => {
+  try {
+    if (!cachedCountries) {
+      cachedCountries = Country.getAllCountries().map((country) => ({
+        name: country.name,
+        isoCode: country.isoCode,
+        flag: country.flag,
+        phonecode: country.phonecode,
+        states: State.getStatesOfCountry(country.isoCode).map((state) => ({
+          name: state.name,
+          isoCode: state.isoCode,
+        })),
+      }));
+    }
+
+    return res.status(200).json({
+      status: true,
+      data: cachedCountries,
+    });
+  } catch (err) {
+    console.error("Error building countries/states list:", err);
+    return res
+      .status(500)
+      .json({ status: false, message: "Could not load location data" });
+  }
+};
+
 module.exports = {
   submitCustomRequest,
   getExpatriate,
+  getAllCountriesWithStates,
 };

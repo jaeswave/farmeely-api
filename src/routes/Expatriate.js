@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   submitCustomRequest,
   getExpatriate,
+  getAllCountriesWithStates,
 } = require("../controllers/Expatriate");
 const authorization = require("../middleware/authorization");
 
@@ -10,5 +11,6 @@ const authorization = require("../middleware/authorization");
 
 router.post("/submit-custom-request", authorization, submitCustomRequest);
 router.get("/get-expatriate", authorization, getExpatriate);
+router.get("/countries", getAllCountriesWithStates);
 
 module.exports = router;

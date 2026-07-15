@@ -330,8 +330,6 @@ const addMoreSlots = async (req, res, next) => {
 };
 
 
-
-
 // ========== GET FARMEELY STATUS ENDPOINT ==========
 const getFarmeelyStatus = async (req, res, next) => {
   const { farmeely_id } = req.params;
