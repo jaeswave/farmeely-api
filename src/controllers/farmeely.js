@@ -615,7 +615,11 @@ const getSingleFarmeely = async (req, res, next) => {
 
 const getAllFarmeely = async (req, res, next) => {
   try {
-    const farmeelySlots = await findQuery("Farmeely");
+    const farmeelySlots = await findQuery(
+      "Farmeely",
+      {},
+      { sort: { created_at: -1 } },
+    );
 
     res.status(200).json({
       status: true,

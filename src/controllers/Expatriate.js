@@ -7,7 +7,6 @@ const {
 const { messages } = require("../constants/messages");
 const Expatriate = require("../models/Expatriate");
 const REQUEST_STATUS = require("../enums/farmeely");
-const { Country, State } = require("country-state-city");
 let cachedCountries = null;
 
 const { v4: uuidv4 } = require("uuid");
@@ -86,30 +85,30 @@ const getExpatriate = async (req, res, next) => {
   }
 };
 
-const getAllCountriesWithStates = (req, res) => {
+const getAllCountriesWithStates = async (req, res, next) => {
   try {
+    // Check if cache exists
     if (!cachedCountries) {
-      cachedCountries = Country.getAllCountries().map((country) => ({
-        name: country.name,
-        isoCode: country.isoCode,
-        flag: country.flag,
-        phonecode: country.phonecode,
-        states: State.getStatesOfCountry(country.isoCode).map((state) => ({
-          name: state.name,
-          isoCode: state.isoCode,
-        })),
+      // Fetch all countries from database
+      const countries = await findQuery("Country", {}, { projection: { _id: 0 } })
+        .sort({ text: 1 }) // Sort alphabetically
+        .lean(); // For better performance
+
+      // Format the data to match your expected response
+      cachedCountries = countries.map((country) => ({
+        text: country.text,
+        value: country.value,
+        cities: country.cities || [],
       }));
     }
 
     return res.status(200).json({
       status: true,
       data: cachedCountries,
+      count: cachedCountries.length,
     });
   } catch (err) {
-    console.error("Error building countries/states list:", err);
-    return res
-      .status(500)
-      .json({ status: false, message: "Could not load location data" });
+    next(err);
   }
 };
 
