@@ -85,7 +85,6 @@ const getExpatriate = async (req, res, next) => {
   }
 };
 
-let cachedCountries = null;
 
 const getAllCountriesWithStates = async (req, res, next) => {
   try {
