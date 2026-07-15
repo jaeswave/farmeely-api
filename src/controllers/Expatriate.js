@@ -85,25 +85,13 @@ const getExpatriate = async (req, res, next) => {
   }
 };
 
-
 const getAllCountriesWithStates = async (req, res, next) => {
   try {
-    if (!cachedCountries) {
-      const countries = await findQuery("Country");
-
-      cachedCountries = countries
-        .map((country) => ({
-          text: country.country,
-          value: country.country,
-          cities: (country.cities || []).map((c) => c.name || c),
-        }))
-        .sort((a, b) => a.text.localeCompare(b.text));
-    }
+    const countries = await findQuery("Country");
 
     return res.status(200).json({
       status: true,
-      data: cachedCountries,
-      count: cachedCountries.length,
+      data: countries,
     });
   } catch (err) {
     next(err);
