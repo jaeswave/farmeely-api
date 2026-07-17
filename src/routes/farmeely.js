@@ -9,7 +9,8 @@ const {
   getAllFarmeely,
   getFarmeelyOfUser,
   getFeaturedFarmeelyByCity,
-  getAllCities
+  getAllCities,
+  getPendingStaging,
 } = require("../controllers/farmeely");
 const router = express.Router();
 
@@ -25,5 +26,5 @@ router.get("/farmeely", authorization, getAllFarmeely);
 router.get("/user/farmeely", authorization, getFarmeelyOfUser);
 router.get("/featured/farmeely", authorization, getFeaturedFarmeelyByCity);
 router.get("/cities", getAllCities);
-
+router.get("/farmeely/:farmeely_id/pending", authorization, getPendingStaging);
 module.exports = router;

@@ -16,9 +16,6 @@ const {
 const hello = 11111;
 const PLATFORM_FEE_PERCENT = 0.1; // 10%
 
-
-
-
 const createFarmeely = async (req, res, next) => {
   const { product_id } = req.params;
   const { address, city, number_of_slot, expected_date } = req.body;
@@ -75,11 +72,9 @@ const createFarmeely = async (req, res, next) => {
     const totalSlots = product.total_slots;
     const creatorSlots = parseInt(number_of_slot);
     if (creatorSlots <= 0 || creatorSlots > totalSlots) {
-      return res
-        .status(400)
-        .json({
-          message: `Invalid slot count. Must be between 1 and ${totalSlots}`,
-        });
+      return res.status(400).json({
+        message: `Invalid slot count. Must be between 1 and ${totalSlots}`,
+      });
     }
 
     const FEE_PERCENTAGE = product.percentage || 10;
@@ -184,11 +179,9 @@ const joinFarmeely = async (req, res, next) => {
 
     const slotsToJoin = parseInt(number_of_slot);
     if (slotsToJoin <= 0 || slotsToJoin > farmeely.slots_available) {
-      return res
-        .status(400)
-        .json({
-          message: `Invalid slot amount. Available: ${farmeely.slots_available}`,
-        });
+      return res.status(400).json({
+        message: `Invalid slot amount. Available: ${farmeely.slots_available}`,
+      });
     }
 
     const states = await findQuery("States");
@@ -252,11 +245,9 @@ const addMoreSlots = async (req, res, next) => {
       return res.status(404).json({ message: "Farmeely not found" });
 
     if (farmeely.farmeely_status !== FARMEELY_STATUS.inProgress) {
-      return res
-        .status(400)
-        .json({
-          message: `Cannot add slots. Farmeely status: ${farmeely.farmeely_status}`,
-        });
+      return res.status(400).json({
+        message: `Cannot add slots. Farmeely status: ${farmeely.farmeely_status}`,
+      });
     }
 
     const user = farmeely.joined_users.find((u) => u.user_id === user_id);
@@ -273,12 +264,10 @@ const addMoreSlots = async (req, res, next) => {
       status: "awaiting_payment",
     });
     if (existingStaging && new Date() < new Date(existingStaging.expires_at)) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "You already have a pending slot addition. Complete that payment first.",
-        });
+      return res.status(400).json({
+        message:
+          "You already have a pending slot addition. Complete that payment first.",
+      });
     }
 
     const slotsToAdd = Number(additional_slots);
@@ -328,7 +317,6 @@ const addMoreSlots = async (req, res, next) => {
     next(err);
   }
 };
-
 
 // ========== GET FARMEELY STATUS ENDPOINT ==========
 const getFarmeelyStatus = async (req, res, next) => {
@@ -723,6 +711,56 @@ const getAllCities = async (req, res, next) => {
   }
 };
 
+
+const getPendingStaging = async (req, res, next) => {
+  const { farmeely_id } = req.params;
+   const user_id = req.params.customer_id;
+
+  try {
+    const [staging] = await findQuery("FarmeelyStaging", {
+      farmeely_id,
+      user_id,
+      status: "awaiting_payment",
+    });
+
+    if (!staging) {
+      return res.status(404).json({
+        status: false,
+        message: "No pending payment found for this farmeely.",
+      });
+    }
+
+    const isExpired = new Date() > new Date(staging.expires_at);
+    if (isExpired) {
+      await updateOne(
+        "FarmeelyStaging",
+        { staging_id: staging.staging_id },
+        { $set: { status: "expired" } },
+      );
+      return res.status(410).json({
+        status: false,
+        message: "This pending payment has expired. Please start again.",
+      });
+    }
+
+    return res.status(200).json({
+      status: true,
+      code: "RESUME_PAYMENT",
+      message: "Pending payment found. Redirecting to complete payment.",
+      data: {
+        farmeely_id: staging.farmeely_id,
+        staging_id: staging.staging_id,
+        amount_to_pay: staging.amount_to_pay,
+        expires_at: staging.expires_at,
+        action_type: staging.action_type,
+        slots_requested: staging.slots_requested,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   createFarmeely,
   joinFarmeely,
@@ -732,4 +770,5 @@ module.exports = {
   getFarmeelyOfUser,
   getFeaturedFarmeelyByCity,
   getAllCities,
+  getPendingStaging,
 };

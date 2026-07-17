@@ -1,6 +1,58 @@
 const { findQuery, updateOne } = require("../repository");
 const { isEmpty } = require("../utils");
 const { PRODUCT_CATEGORY_ID } = require("../enums/products");
+const { v4: uuidv4 } = require("uuid");
+
+const createProductRequest = async (req, res, next) => {
+  const { product_name, note } = req.body;
+  const user_id = req.params.customer_id;
+  const user_email = req.params.email;
+
+  try {
+    if (!product_name || !product_name.trim()) {
+      return res
+        .status(400)
+        .json({ message: "Please tell us what product you're looking for" });
+    }
+
+    const request_id = uuidv4();
+
+    await insertOne("ProductRequests", {
+      request_id,
+      user_id,
+      user_email,
+      product_name: product_name.trim(),
+      note: note?.trim() || null,
+      status: "pending", // pending | reviewed | added
+      created_at: new Date(),
+    });
+
+    return res.status(200).json({
+      status: true,
+      message: "Thanks! We've noted your request and will look into adding it.",
+      data: { request_id },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getMyProductRequests = async (req, res, next) => {
+  const user_id = req.params.customer_id;
+
+  try {
+    const requests = await findQuery("ProductRequests", { user_id });
+    return res.status(200).json({
+      status: true,
+      data: requests.sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at),
+      ),
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 //create product
 
@@ -108,4 +160,9 @@ module.exports = {
   getSingleProduct,
   updateProduct,
   getCategory,
+  createProductRequest, 
+  getMyProductRequests 
 };
+
+
+

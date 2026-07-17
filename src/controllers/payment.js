@@ -25,12 +25,9 @@ const initializePayment = async (req, res) => {
 
     const [existingTransaction] = await findQuery("Transaction", { reference });
     if (existingTransaction) {
-      return res
-        .status(409)
-        .json({
-          message:
-            "Payment reference already exists. Please generate a new one.",
-        });
+      return res.status(409).json({
+        message: "Payment reference already exists. Please generate a new one.",
+      });
     }
 
     const [staging] = await findQuery("FarmeelyStaging", {
@@ -49,11 +46,9 @@ const initializePayment = async (req, res) => {
         { staging_id: staging.staging_id },
         { $set: { status: "expired" } },
       );
-      return res
-        .status(400)
-        .json({
-          message: "This staged request has expired. Please try again.",
-        });
+      return res.status(400).json({
+        message: "This staged request has expired. Please try again.",
+      });
     }
 
     await insertOne("Transaction", {
@@ -93,13 +88,11 @@ const verifyPayment = async (req, res) => {
   try {
     const [transaction] = await findQuery("Transaction", { reference });
     if (!transaction) {
-      return res
-        .status(404)
-        .json({
-          status: false,
-          message:
-            "Transaction reference not found. Please initialize payment first.",
-        });
+      return res.status(404).json({
+        status: false,
+        message:
+          "Transaction reference not found. Please initialize payment first.",
+      });
     }
     if (transaction.transaction_status === "completed") {
       return res.status(400).json({
@@ -163,7 +156,14 @@ const verifyPayment = async (req, res) => {
     await updateOne(
       "FarmeelyStaging",
       { staging_id: staging.staging_id },
-      { $set: { status: "paid", paid_at: new Date() } },
+      {
+        $set: {
+          status: "paid",
+          paid_at: new Date(),
+          moved_to_main: true,
+          moved_to_main_at: new Date(),
+        },
+      },
     );
     await updateOne(
       "Transaction",
@@ -177,13 +177,11 @@ const verifyPayment = async (req, res) => {
       },
     );
 
-    return res
-      .status(200)
-      .json({
-        status: true,
-        message: "Payment verified successfully",
-        data: result,
-      });
+    return res.status(200).json({
+      status: true,
+      message: "Payment verified successfully",
+      data: result,
+    });
   } catch (err) {
     console.error("Payment verification error:", err);
     if (req.params.reference) {
@@ -199,13 +197,11 @@ const verifyPayment = async (req, res) => {
         },
       );
     }
-    return res
-      .status(500)
-      .json({
-        status: false,
-        message: "Payment verification failed",
-        error: err.message,
-      });
+    return res.status(500).json({
+      status: false,
+      message: "Payment verification failed",
+      error: err.message,
+    });
   }
 };
 

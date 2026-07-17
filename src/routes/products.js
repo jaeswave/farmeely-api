@@ -5,7 +5,10 @@ const {
   getSingleProduct,
   updateProduct,
   getCategory,
+  createProductRequest,
+  getMyProductRequests
 } = require("../controllers/products")
+const authorization = require("../middleware/authorization");
 
 /**
  * create a new user record
@@ -74,5 +77,7 @@ router.get("/product/get_single/product/:id", getSingleProduct)
  */
 router.patch("/products/update/product/:id", updateProduct)
 router.get("/products/get-categories", getCategory)
+router.post("/product-request", authorization, createProductRequest);
+router.get("/product-request/mine", authorization, getMyProductRequests);
 
 module.exports = router
