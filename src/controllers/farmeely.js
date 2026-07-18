@@ -13,7 +13,6 @@ const {
   ACTIVE_SLOT_STATUS,
   FARMEELY_STATUS,
 } = require("../enums/farmeely");
-const hello = 11111;
 const PLATFORM_FEE_PERCENT = 0.1; // 10%
 
 const createFarmeely = async (req, res, next) => {

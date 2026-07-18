@@ -1,4 +1,4 @@
-const { findQuery, updateOne } = require("../repository");
+const { findQuery, updateOne, insertOne } = require("../repository");
 const { isEmpty } = require("../utils");
 const { PRODUCT_CATEGORY_ID } = require("../enums/products");
 const { v4: uuidv4 } = require("uuid");
