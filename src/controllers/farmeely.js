@@ -760,6 +760,46 @@ const getPendingStaging = async (req, res, next) => {
   }
 };
 
+const getAllUserStagings = async (req, res, next) => {
+  const user_id = req.params.customer_id;
+
+  try {
+    const stagings = await findQuery("FarmeelyStaging", {
+      user_id,
+      status: "awaiting_payment",
+    });
+
+    if (!stagings || stagings.length === 0) {
+      return res.status(404).json({
+        status: false,
+        message: "No pending payments found for this user.",
+      });
+    }
+
+    // Check for expired
+    const now = new Date();
+    const validStagings = stagings.filter(
+      staging => now <= new Date(staging.expires_at)
+    );
+
+    return res.status(200).json({
+      status: true,
+      message: `${validStagings.length} pending payment(s) found.`,
+      data: validStagings.map(staging => ({
+        staging_id: staging.staging_id,
+        farmeely_id: staging.farmeely_id, // This will be different for each
+        amount_to_pay: staging.amount_to_pay,
+        expires_at: staging.expires_at,
+        action_type: staging.action_type,
+        slots_requested: staging.slots_requested,
+        created_at: staging.created_at,
+      })),
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   createFarmeely,
   joinFarmeely,
@@ -770,4 +810,5 @@ module.exports = {
   getFeaturedFarmeelyByCity,
   getAllCities,
   getPendingStaging,
+  getAllUserStagings,
 };
