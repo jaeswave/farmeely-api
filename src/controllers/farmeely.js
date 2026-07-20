@@ -710,10 +710,9 @@ const getAllCities = async (req, res, next) => {
   }
 };
 
-
 const getPendingStaging = async (req, res, next) => {
   const { farmeely_id } = req.params;
-   const user_id = req.params.customer_id;
+  const user_id = req.params.customer_id;
 
   try {
     const [staging] = await findQuery("FarmeelyStaging", {
@@ -779,13 +778,13 @@ const getAllUserStagings = async (req, res, next) => {
     // Check for expired
     const now = new Date();
     const validStagings = stagings.filter(
-      staging => now <= new Date(staging.expires_at)
+      (staging) => now <= new Date(staging.expires_at),
     );
 
     return res.status(200).json({
       status: true,
       message: `${validStagings.length} pending payment(s) found.`,
-      data: validStagings.map(staging => ({
+      data: validStagings.map((staging) => ({
         staging_id: staging.staging_id,
         farmeely_id: staging.farmeely_id, // This will be different for each
         amount_to_pay: staging.amount_to_pay,
