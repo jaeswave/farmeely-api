@@ -28,5 +28,5 @@ router.get("/user/farmeely", authorization, getFarmeelyOfUser);
 router.get("/featured/farmeely", authorization, getFeaturedFarmeelyByCity);
 router.get("/cities", getAllCities);
 router.get("/farmeely/:farmeely_id/pending", authorization, getPendingStaging);
-router.get("/farmeely/stagings", authorization, getAllUserStagings);
+router.get("/farmeely/pending/stagings", authorization, getAllUserStagings);
 module.exports = router;
