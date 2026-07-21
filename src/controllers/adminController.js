@@ -756,38 +756,110 @@ const updateExpatriateStatus = async (req, res, next) => {
     next(err);
   }
 };
+
+
 const createProduct = async (req, res, next) => {
   const {
     product_name,
     product_price,
-    portion_price,
-    total_slots,
+    slot_price,
     product_image,
     description,
+    category,
   } = req.body;
 
-  try {
-    const products = await findQuery("Products", {});
-    const product_id = products.length + 1;
+  // Validate required fields (only what's truly needed)
+  if (!product_name || !product_price || !slot_price || !category) {
+    return res.status(400).json({
+      status: false,
+      message: "Missing required fields",
+      required: {
+        product_name: "Product name (string)",
+        product_price: "Total product price (number)",
+        slot_price: "Price per slot (number)",
+        category: "Product category (string)",
+      },
+      optional: {
+        product_image: "Product image URL (string)",
+        description: "Product description (string)",
+      },
+    });
+  }
 
+  // Validate price values
+  if (product_price <= 0 || slot_price <= 0) {
+    return res.status(400).json({
+      status: false,
+      message: "Prices must be greater than 0",
+    });
+  }
+
+  // Validate that slot_price is less than product_price
+  if (slot_price >= product_price) {
+    return res.status(400).json({
+      status: false,
+      message: "Slot price must be less than total product price",
+      details: {
+        product_price: product_price,
+        slot_price: slot_price,
+        suggestion: `Slot price should be less than ${product_price}`,
+      },
+    });
+  }
+
+  try {
+    // Get all products to generate product_id
+    const products = await findQuery("Products", {});
+    const product_id = products.length > 0 ? products.length + 1 : 1;
+
+    // Calculate total_slots
+    const total_slots = Math.floor(product_price / slot_price);
+
+    // Check if we have at least 1 slot
+    if (total_slots < 1) {
+      return res.status(400).json({
+        status: false,
+        message:
+          "Product price must be at least equal to slot price to have 1 slot",
+        details: {
+          product_price: product_price,
+          slot_price: slot_price,
+          calculated_slots: total_slots,
+        },
+      });
+    }
+
+    // Calculate percentage (what % of product price is each slot)
+    const percentage = parseFloat(
+      ((slot_price / product_price) * 100).toFixed(2),
+    );
+
+    // Build product object
     const newProduct = {
       product_id,
-      product_name,
-      product_price,
-      portion_price,
-      total_slots,
-      product_image,
-      description,
+      product_name: product_name.trim(),
+      product_price: parseFloat(product_price),
+      slot_price: parseFloat(slot_price),
+      total_slots: total_slots,
+      product_image: product_image || "",
+      description: description || "",
+      category: category.trim(),
+      percentage: percentage,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
+    // Save to database
     await insertOne("Products", newProduct);
 
+    // Return success response
     res.status(201).json({
       status: true,
       message: "Product created successfully",
       data: newProduct,
     });
   } catch (err) {
+    console.error("Error creating product:", err);
     next(err);
   }
 };
