@@ -784,15 +784,7 @@ const getAllUserStagings = async (req, res, next) => {
     return res.status(200).json({
       status: true,
       message: `${validStagings.length} pending payment(s) found.`,
-      data: validStagings.map((staging) => ({
-        staging_id: staging.staging_id,
-        farmeely_id: staging.farmeely_id, // This will be different for each
-        amount_to_pay: staging.amount_to_pay,
-        expires_at: staging.expires_at,
-        action_type: staging.action_type,
-        slots_requested: staging.slots_requested,
-        created_at: staging.created_at,
-      })),
+      data: validStagings,
     });
   } catch (err) {
     next(err);
