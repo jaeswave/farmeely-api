@@ -784,7 +784,7 @@ const getAllUserStagings = async (req, res, next) => {
     return res.status(200).json({
       status: true,
       message: `${validStagings.length} pending payment(s) found.`,
-      data: validStagings,
+      data: [...validStagings]
     });
   } catch (err) {
     next(err);
