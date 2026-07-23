@@ -30,17 +30,23 @@ const initializePayment = async (req, res) => {
       });
     }
 
-    const [staging] = await findQuery("FarmeelyStaging", {
-      farmeely_id,
-      user_id,
-      status: "awaiting_payment",
-    });
+    const [staging] = await findQuery(
+      "FarmeelyStaging",
+      {
+        farmeely_id,
+        user_id,
+        status: "awaiting_payment",
+      },
+      {
+        sort: { created_at: -1 }, 
+        limit: 1,
+      },
+    );
     if (!staging) {
       return res
         .status(404)
         .json({ message: "No pending staged action found for this farmeely" });
     }
-   
 
     await insertOne("Transaction", {
       farmeely_id,
