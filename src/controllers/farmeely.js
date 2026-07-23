@@ -28,20 +28,20 @@ const createFarmeely = async (req, res, next) => {
     if (!product) return res.status(404).json({ message: "Product not found" });
 
     // Block duplicate unpaid "create" attempts
-    const [existingStaging] = await findQuery("FarmeelyStaging", {
-      action_type: "create",
-      product_id: Number(product_id),
-      city,
-      user_id,
-      status: "awaiting_payment",
-    });
-    if (existingStaging && new Date() < new Date(existingStaging.expires_at)) {
-      return res.status(400).json({
-        message:
-          "You already have a pending farmeely creation. Complete payment or wait for it to expire.",
-        data: { farmeely_id: existingStaging.farmeely_id },
-      });
-    }
+    // const [existingStaging] = await findQuery("FarmeelyStaging", {
+    //   action_type: "create",
+    //   product_id: Number(product_id),
+    //   city,
+    //   user_id,
+    //   status: "awaiting_payment",
+    // });
+    // if (existingStaging && new Date() < new Date(existingStaging.expires_at)) {
+    //   return res.status(400).json({
+    //     message:
+    //       "You already have a pending farmeely creation. Complete payment or wait for it to expire.",
+    //     data: { farmeely_id: existingStaging.farmeely_id },
+    //   });
+    // }
 
     // Block if user already has a PAID, active farmeely as creator here
     const [existingActive] = await findQuery("Farmeely", {
@@ -162,19 +162,19 @@ const joinFarmeely = async (req, res, next) => {
         .json({ message: "You have already joined this farmeely" });
     }
 
-    const [existingStaging] = await findQuery("FarmeelyStaging", {
-      action_type: "join",
-      farmeely_id,
-      user_id,
-      status: "awaiting_payment",
-    });
-    if (existingStaging && new Date() < new Date(existingStaging.expires_at)) {
-      return res.status(400).json({
-        message:
-          "You already have a pending join request. Complete payment to join.",
-        data: { farmeely_id },
-      });
-    }
+    // const [existingStaging] = await findQuery("FarmeelyStaging", {
+    //   action_type: "join",
+    //   farmeely_id,
+    //   user_id,
+    //   status: "awaiting_payment",
+    // });
+    // if (existingStaging && new Date() < new Date(existingStaging.expires_at)) {
+    //   return res.status(400).json({
+    //     message:
+    //       "You already have a pending join request. Complete payment to join.",
+    //     data: { farmeely_id },
+    //   });
+    // }
 
     const slotsToJoin = parseInt(number_of_slot);
     if (slotsToJoin <= 0 || slotsToJoin > farmeely.slots_available) {
@@ -256,18 +256,18 @@ const addMoreSlots = async (req, res, next) => {
         .json({ message: "You are not part of this farmeely" });
     // Note: everyone in joined_users is by definition already paid now, so no is_paid check needed.
 
-    const [existingStaging] = await findQuery("FarmeelyStaging", {
-      action_type: "add_slots",
-      farmeely_id,
-      user_id,
-      status: "awaiting_payment",
-    });
-    if (existingStaging && new Date() < new Date(existingStaging.expires_at)) {
-      return res.status(400).json({
-        message:
-          "You already have a pending slot addition. Complete that payment first.",
-      });
-    }
+    // const [existingStaging] = await findQuery("FarmeelyStaging", {
+    //   action_type: "add_slots",
+    //   farmeely_id,
+    //   user_id,
+    //   status: "awaiting_payment",
+    // });
+    // if (existingStaging && new Date() < new Date(existingStaging.expires_at)) {
+    //   return res.status(400).json({
+    //     message:
+    //       "You already have a pending slot addition. Complete that payment first.",
+    //   });
+    // }
 
     const slotsToAdd = Number(additional_slots);
     if (slotsToAdd <= 0)

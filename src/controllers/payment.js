@@ -40,16 +40,7 @@ const initializePayment = async (req, res) => {
         .status(404)
         .json({ message: "No pending staged action found for this farmeely" });
     }
-    if (new Date() > new Date(staging.expires_at)) {
-      await updateOne(
-        "FarmeelyStaging",
-        { staging_id: staging.staging_id },
-        { $set: { status: "expired" } },
-      );
-      return res.status(400).json({
-        message: "This staged request has expired. Please try again.",
-      });
-    }
+   
 
     await insertOne("Transaction", {
       farmeely_id,
