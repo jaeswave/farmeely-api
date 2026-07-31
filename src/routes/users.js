@@ -61,7 +61,7 @@ router.patch(
 router.get("/user/get-profile", authorization, getUserProfile);
 router.post("/addresses", authorization, addAddress);
 router.get("/addresses", authorization, getAddresses);
-router.delete("/addresses", authorization, deleteAddress);
+router.delete("/addresses/:address_id", authorization, deleteAddress);
 router.post("/preferences", authorization, savePreferences);
 router.get("/preferences", authorization, getAvailablePreferences);
 router.post("/register-push-token", authorization, registerPushToken);

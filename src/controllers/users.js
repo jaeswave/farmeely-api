@@ -474,6 +474,7 @@ const addAddress = async (req, res, next) => {
 
     // Create new address object
     const newAddress = {
+        id: uuidv4(),
       address: address.trim(),
       city: city,
     };
@@ -557,8 +558,7 @@ const getAllStates = async (req, res, next) => {
 // Delete an address
 const deleteAddress = async (req, res, next) => {
   try {
-    const { customer_id, addressId } = req.params;
-    const { address, city } = req.body;
+    const { customer_id, address_id } = req.params;
 
     const [userDetails] = await findQuery("Users", {
       customer_id: customer_id,
@@ -570,16 +570,10 @@ const deleteAddress = async (req, res, next) => {
       return next(err);
     }
 
-    const addresses = userDetails.address || [];
-
-    const updatedAddresses = addresses.filter(
-      (addr) => addr.address === address && addr.city === city,
-    );
-
     await updateOne(
       "Users",
       { customer_id: customer_id },
-      { $set: { addresses: updatedAddresses } },
+      { $pull: { address: { id: address_id } } },
     );
 
     return res.status(200).json({

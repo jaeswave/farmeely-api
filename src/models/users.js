@@ -35,6 +35,10 @@ const UserSchema = new mongoose.Schema({
   //address
   address: [
     {
+      id: {
+        type: String,
+        required: true,
+      },
       address: {
         type: String,
         required: true,
