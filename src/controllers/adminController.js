@@ -766,10 +766,11 @@ const createProduct = async (req, res, next) => {
     product_image,
     description,
     category,
+    expected_delivery_days
   } = req.body;
 
   // Validate required fields (only what's truly needed)
-  if (!product_name || !product_price || !slot_price || !category) {
+  if (!product_name || !product_price || !slot_price || !category || !expected_delivery_days) {
     return res.status(400).json({
       status: false,
       message: "Missing required fields",
@@ -845,6 +846,7 @@ const createProduct = async (req, res, next) => {
       description: description || "",
       category: category.trim(),
       percentage: percentage,
+      expected_delivery_days: Number(expected_delivery_days) || 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };

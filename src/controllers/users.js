@@ -640,7 +640,8 @@ const getAvailablePreferences = async (req, res) => {
 };
 
 const registerPushToken = async (req, res, next) => {
-  const { customer_id } = req.params;
+    const customer_id = req.params.customer_id;
+
   const { token } = req.body;
 
   try {
