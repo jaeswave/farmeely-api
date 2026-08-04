@@ -393,7 +393,7 @@ const editProfile = async (req, res, next) => {
     await updateWithOperators(
       "Users",
       { customer_id: customer_id },
-      { $set: { fullname: fullname } },  // ✅ FIXED: added $set
+      { $set: { fullname: fullname } }, // ✅ FIXED: added $set
     );
 
     res.status(200).send({
@@ -474,7 +474,7 @@ const addAddress = async (req, res, next) => {
 
     // Create new address object
     const newAddress = {
-        id: uuidv4(),
+      id: uuidv4(),
       address: address.trim(),
       city: city,
     };
@@ -493,8 +493,7 @@ const addAddress = async (req, res, next) => {
       {
         $push: {
           address: {
-            address: address.trim(),
-            city: city,
+            address: newAddress,
           },
         },
       },
@@ -570,11 +569,18 @@ const deleteAddress = async (req, res, next) => {
       return next(err);
     }
 
-    await updateOne(
+    const result = await updateOne(
       "Users",
       { customer_id: customer_id },
       { $pull: { address: { id: address_id } } },
     );
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({
+        status: false,
+        message: "Address not found or already deleted",
+      });
+    }
 
     return res.status(200).json({
       status: true,
@@ -634,7 +640,7 @@ const getAvailablePreferences = async (req, res) => {
 };
 
 const registerPushToken = async (req, res, next) => {
-    const customer_id = req.params.customer_id;
+  const customer_id = req.params.customer_id;
 
   const { token } = req.body;
 
