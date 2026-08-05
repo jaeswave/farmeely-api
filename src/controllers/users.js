@@ -492,9 +492,7 @@ const addAddress = async (req, res, next) => {
       { customer_id },
       {
         $push: {
-          address: {
-            address: newAddress,
-          },
+          address: newAddress,
         },
       },
     );
