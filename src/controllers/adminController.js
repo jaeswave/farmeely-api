@@ -866,6 +866,213 @@ const createProduct = async (req, res, next) => {
   }
 };
 
+const updateProduct = async (req, res, next) => {
+  const { product_id } = req.params;
+  const {
+    product_name,
+    product_price,
+    slot_price,
+    product_image,
+    description,
+    category,
+    expected_delivery_days,
+  } = req.body;
+
+  // Validate product_id
+  if (!product_id) {
+    return res.status(400).json({
+      status: false,
+      message: "Product ID is required",
+    });
+  }
+
+  // Check if at least one field is provided
+  if (
+    !product_name &&
+    product_price === undefined &&
+    slot_price === undefined &&
+    !product_image &&
+    !description &&
+    !category &&
+    expected_delivery_days === undefined
+  ) {
+    return res.status(400).json({
+      status: false,
+      message: "At least one field is required for update",
+      updatable_fields: {
+        product_name: "Product name (string) - optional",
+        product_price: "Product price (number) - must provide with slot_price",
+        slot_price: "Slot price (number) - must provide with product_price",
+        product_image: "Product image URL (string) - optional",
+        description: "Product description (string) - optional",
+        category: "Product category (string) - optional",
+        expected_delivery_days: "Expected delivery days (number) - optional",
+      },
+      note: "If updating prices, you must provide BOTH product_price AND slot_price together",
+    });
+  }
+
+  try {
+    // Find existing product
+    const products = await findQuery("Products", {
+      product_id: parseInt(product_id),
+    });
+
+    if (!products || products.length === 0) {
+      return res.status(404).json({
+        status: false,
+        message: "Product not found",
+      });
+    }
+
+    const existingProduct = products[0];
+    const updateFields = {};
+
+    // ============ VALIDATE TEXT FIELDS (OPTIONAL) ============
+    if (product_name) {
+      if (!product_name.trim()) {
+        return res.status(400).json({
+          status: false,
+          message: "Product name cannot be empty",
+        });
+      }
+      updateFields.product_name = product_name.trim();
+    }
+
+    if (product_image !== undefined) {
+      updateFields.product_image = product_image.trim() || "";
+    }
+
+    if (description !== undefined) {
+      updateFields.description = description.trim() || "";
+    }
+
+    if (category) {
+      if (!category.trim()) {
+        return res.status(400).json({
+          status: false,
+          message: "Category cannot be empty",
+        });
+      }
+      updateFields.category = category.trim();
+    }
+
+    if (expected_delivery_days !== undefined) {
+      const days = Number(expected_delivery_days);
+      if (isNaN(days) || days < 0) {
+        return res.status(400).json({
+          status: false,
+          message: "Expected delivery days must be a non-negative number",
+        });
+      }
+      updateFields.expected_delivery_days = days;
+    }
+
+    // ============ PRICE VALIDATION - BOTH REQUIRED TOGETHER ============
+    // Check if EITHER price field is provided
+    if (product_price !== undefined || slot_price !== undefined) {
+      // If either is provided, BOTH must be provided
+      if (product_price === undefined || slot_price === undefined) {
+        return res.status(400).json({
+          status: false,
+          message: "Both product_price and slot_price are required together",
+          details: {
+            provided: {
+              product_price:
+                product_price !== undefined ? "✓ provided" : "✗ missing",
+              slot_price: slot_price !== undefined ? "✓ provided" : "✗ missing",
+            },
+            requirement: "When updating prices, you must provide BOTH fields",
+          },
+        });
+      }
+
+      // Validate product_price (same as create)
+      const parsedProductPrice = parseFloat(product_price);
+      if (isNaN(parsedProductPrice) || parsedProductPrice <= 0) {
+        return res.status(400).json({
+          status: false,
+          message: "Product price must be a positive number greater than 0",
+        });
+      }
+
+      // Validate slot_price (same as create)
+      const parsedSlotPrice = parseFloat(slot_price);
+      if (isNaN(parsedSlotPrice) || parsedSlotPrice <= 0) {
+        return res.status(400).json({
+          status: false,
+          message: "Slot price must be a positive number greater than 0",
+        });
+      }
+
+      // Validate slot_price < product_price (same as create)
+      if (parsedSlotPrice >= parsedProductPrice) {
+        return res.status(400).json({
+          status: false,
+          message: "Slot price must be less than total product price",
+          details: {
+            product_price: parsedProductPrice,
+            slot_price: parsedSlotPrice,
+            suggestion: `Slot price should be less than ${parsedProductPrice}`,
+          },
+        });
+      }
+
+      // Calculate total_slots (same as create)
+      const total_slots = Math.floor(parsedProductPrice / parsedSlotPrice);
+
+      if (total_slots < 1) {
+        return res.status(400).json({
+          status: false,
+          message:
+            "Product price must be at least equal to slot price to have 1 slot",
+          details: {
+            product_price: parsedProductPrice,
+            slot_price: parsedSlotPrice,
+            calculated_slots: total_slots,
+          },
+        });
+      }
+
+      // Calculate percentage (same as create)
+      const percentage = parseFloat(
+        ((parsedSlotPrice / parsedProductPrice) * 100).toFixed(2),
+      );
+
+      // Update ALL price-related fields
+      updateFields.product_price = parsedProductPrice;
+      updateFields.slot_price = parsedSlotPrice;
+      updateFields.total_slots = total_slots;
+      updateFields.percentage = percentage;
+    }
+
+    // Add updated_at timestamp
+    updateFields.updated_at = new Date().toISOString();
+
+    // Update product in database
+    await updateOne(
+      "Products",
+      { product_id: parseInt(product_id) },
+      updateFields,
+    );
+
+    // Get updated product
+    const updatedProducts = await findQuery("Products", {
+      product_id: parseInt(product_id),
+    });
+    const updatedProduct = updatedProducts[0];
+
+    res.status(200).json({
+      status: true,
+      message: "Product updated successfully",
+      data: updatedProduct,
+    });
+  } catch (err) {
+    console.error("Error updating product:", err);
+    next(err);
+  }
+};
+
 // Admin Send Notification
 // Your controller - REPLACE with this
 const sendNotification = async (req, res, next) => {
@@ -1051,6 +1258,7 @@ module.exports = {
   updateOrderStatus,
   updateFarmeelyStatus,
   createProduct,
+  updateProduct,
   updateExpatriateStatus,
   sendNotification,
   adminCreateFarmeely

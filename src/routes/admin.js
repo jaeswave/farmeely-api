@@ -55,6 +55,7 @@ router.put("/expatriate/:request_id/status", adminController.updateExpatriateSta
 
 // ================= PRODUCT =================
 router.post("/products", adminController.createProduct);
+router.put("/products/:product_id", adminController.updateProduct);
 router.post("/create-farmeely", adminController.adminCreateFarmeely);
 
 // ================= PUSH NOTIFICATION =================
