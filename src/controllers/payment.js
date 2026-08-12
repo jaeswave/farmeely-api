@@ -237,6 +237,7 @@ const activateCreatedFarmeely = async (staging, reference) => {
       {
         user_id: staging.user_id,
         user_email: staging.user_email,
+        fullname: staging.fullname,
         is_creator: true,
         slots_joined: staging.slots_requested,
         amount_paid: staging.amount_to_pay,
@@ -284,6 +285,7 @@ const activateJoin = async (staging, reference) => {
         joined_users: {
           user_id: staging.user_id,
           user_email: staging.user_email,
+          fullname: staging.fullname,
           is_creator: false,
           slots_joined: staging.slots_requested,
           amount_paid: staging.amount_to_pay,
