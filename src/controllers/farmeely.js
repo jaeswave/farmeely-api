@@ -20,7 +20,7 @@ const createFarmeely = async (req, res, next) => {
   const { address, city, number_of_slot, expected_date } = req.body;
   const user_id = req.params.customer_id;
   const user_email = req.params.email;
-  const fullname = req.param.fullname
+  const fullname = req.params.fullname
 
   try {
     const [product] = await findQuery("Products", {
