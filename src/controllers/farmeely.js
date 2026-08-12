@@ -46,9 +46,7 @@ const createFarmeely = async (req, res, next) => {
     // Block if user already has a PAID, active farmeely as creator here
     const [existingActive] = await findQuery("Farmeely", {
       product_id: Number(product_id),
-      city,
-      "joined_users.user_id": user_id,
-      "joined_users.is_creator": true,
+      city,    
       farmeely_status: {
         $in: [FARMEELY_STATUS.inProgress, FARMEELY_STATUS.fullyBooked],
       },
@@ -56,7 +54,7 @@ const createFarmeely = async (req, res, next) => {
     if (existingActive) {
       return res.status(400).json({
         message:
-          "You already have an active farmeely for this product in this city",
+          "There is an active farmeely for this product in this city",
         data: { farmeely_id: existingActive.farmeely_id },
       });
     }
