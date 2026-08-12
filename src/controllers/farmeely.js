@@ -46,15 +46,22 @@ const createFarmeely = async (req, res, next) => {
     // Block if user already has a PAID, active farmeely as creator here
     const [existingActive] = await findQuery("Farmeely", {
       product_id: Number(product_id),
-      city,    
+      city,
+
       farmeely_status: {
         $in: [FARMEELY_STATUS.inProgress, FARMEELY_STATUS.fullyBooked],
       },
     });
     if (existingActive) {
+      if (existingActive.joined_users.user_id === user_id) {
+        return res.status(400).json({
+          message:
+            "You already have an active farmeely for this product in this city",
+          data: { farmeely_id: existingActive.farmeely_id },
+        });
+      }
       return res.status(400).json({
-        message:
-          "There is an active farmeely for this product in this city",
+        message: "There is an active farmeely for this product in this city",
         data: { farmeely_id: existingActive.farmeely_id },
       });
     }
@@ -782,7 +789,7 @@ const getAllUserStagings = async (req, res, next) => {
     return res.status(200).json({
       status: true,
       message: `${validStagings.length} pending payment(s) found.`,
-      data: [...validStagings]
+      data: [...validStagings],
     });
   } catch (err) {
     next(err);
