@@ -26,6 +26,7 @@ const authorization = async (req, res, next) => {
         })
         req.params.email = checkUserDetails[0].email
         req.params.customer_id = checkUserDetails[0].customer_id
+        req.params.fullname = checkUserDetails[0].fullname
       }
       next()
     })

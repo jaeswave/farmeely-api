@@ -38,7 +38,7 @@ const initializePayment = async (req, res) => {
         status: "awaiting_payment",
       },
       {
-        sort: { created_at: -1 }, 
+        sort: { created_at: -1 },
         limit: 1,
       },
     );

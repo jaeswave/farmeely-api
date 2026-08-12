@@ -20,6 +20,7 @@ const createFarmeely = async (req, res, next) => {
   const { address, city, number_of_slot, expected_date } = req.body;
   const user_id = req.params.customer_id;
   const user_email = req.params.email;
+  const fullname = req.param.fullname
 
   try {
     const [product] = await findQuery("Products", {
@@ -95,6 +96,7 @@ const createFarmeely = async (req, res, next) => {
       staging_id: uuidv4(),
       action_type: "create",
       farmeely_id,
+      fullname: fullname,
       slot_id,
       product_id: Number(product_id),
       product_name: product.product_name,
@@ -146,6 +148,7 @@ const joinFarmeely = async (req, res, next) => {
   const { city, number_of_slot } = req.body;
   const user_id = req.params.customer_id;
   const user_email = req.params.email;
+  const fullname = req.params.fullname
 
   try {
     const [farmeely] = await findQuery("Farmeely", {
@@ -206,6 +209,7 @@ const joinFarmeely = async (req, res, next) => {
       staging_id: uuidv4(),
       action_type: "join",
       farmeely_id,
+      fullname: fullname,
       product_id: Number(product_id),
       user_id,
       user_email,
